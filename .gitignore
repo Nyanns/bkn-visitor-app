@@ -1,0 +1,19 @@
+# File: .gitignore
+
+# 1. Abaikan file Environment (Password)
+.env
+
+# 2. Abaikan folder Virtual Environment (Biar ringan)
+venv/
+.venv/
+
+# 3. Abaikan folder cache Python
+__pycache__/
+*.pyc
+
+# 4. Abaikan file upload user (Data privasi orang lain)
+backend/uploads/
+
+# 5. Abaikan file sistem operasi
+.DS_Store
+Thumbs.db
