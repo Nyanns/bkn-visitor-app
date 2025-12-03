@@ -5,7 +5,9 @@ import {
 import { FaIdCard } from 'react-icons/fa';
 
 function VisitorCard({ data }) {
-    // Helper: Ubah path backend jadi URL gambar
+    // SAFETY CHECK: Kalau data kosong, jangan render apa-apa
+    if (!data) return null;
+
     const getPhotoUrl = (path) => {
         if (!path) return "https://via.placeholder.com/150";
         const filename = path.split(/[/\\]/).pop();
@@ -13,18 +15,10 @@ function VisitorCard({ data }) {
     };
 
     return (
-        <Card
-            w="full"
-            boxShadow="2xl"
-            borderRadius="3xl"
-            overflow="hidden"
-            bg="white"
-        >
-            {/* Background Banner */}
+        <Card w="full" boxShadow="2xl" borderRadius="3xl" overflow="hidden" bg="white">
             <Box h="100px" bgGradient="linear(to-r, blue.500, blue.600)" />
 
             <CardBody textAlign="center" mt="-60px">
-                {/* Foto Profil dengan Border */}
                 <Box position="relative" display="inline-block">
                     <Image
                         borderRadius="full"
@@ -39,20 +33,14 @@ function VisitorCard({ data }) {
                 </Box>
 
                 <VStack spacing={1} mt={4}>
-                    <Heading size="md" color="gray.700">{data.full_name}</Heading>
+                    <Heading size="md" color="gray.700">{data.full_name || "Nama Tidak Ada"}</Heading>
 
-                    <Badge
-                        colorScheme="blue"
-                        variant="subtle"
-                        px={3} py={1}
-                        borderRadius="full"
-                        fontSize="0.8em"
-                    >
-                        <Icon as={FaIdCard} mr={1} /> {data.nik}
+                    <Badge colorScheme="blue" variant="subtle" px={3} py={1} borderRadius="full">
+                        <Icon as={FaIdCard} mr={1} /> {data.nik || "-"}
                     </Badge>
 
                     <Text color="gray.500" fontSize="sm" fontWeight="medium">
-                        {data.institution}
+                        {data.institution || "Instansi Tidak Diketahui"}
                     </Text>
                 </VStack>
 
