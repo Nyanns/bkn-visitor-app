@@ -1,78 +1,105 @@
 import shutil
 import os
+import uuid  # Library untuk bikin nama file acak & unik
 from datetime import datetime
-from typing import Optional
+from typing import List
 
-from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Form
+from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Form, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
 
-# Import file buatan kita sendiri
+# Import file lokal
 from database import engine, get_db
 import models
 
-# 1. Inisialisasi Database (Otomatis buat tabel jika belum ada)
+# Inisialisasi Database
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="BKN Visitor System", version="1.0.0")
+app = FastAPI(title="BKN Visitor System", version="1.1.0 (Secure)")
 
-# 2. Setup CORS (Agar React nanti bisa akses API ini)
+# --- KEAMANAN 1: CORS (Membatasi Siapa yang Boleh Akses) ---
+# Di Production nanti, ubah allow_origins=["*"] menjadi domain asli, misal ["https://bkn.go.id"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Di production, ganti '*' dengan domain website aslinya
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 3. Setup Folder Upload (Agar foto bisa dibuka di browser)
-# Pastikan folder 'uploads' sudah dibuat sebelumnya
-os.makedirs("uploads", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# Setup Folder Upload
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 
-# --- HELPER: FUNGSI SIMPAN FILE ---
-def save_upload_file(upload_file: UploadFile, destination_folder: str = "uploads"):
+# --- KEAMANAN 2: VALIDASI FILE (Mencegah Virus) ---
+# Hanya izinkan file gambar
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
+ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png"}
+
+def validate_and_save_file(upload_file: UploadFile, destination_folder: str) -> str:
+    """
+    Fungsi ini mengecek tipe file dan menyimpannya dengan nama acak
+    agar hacker tidak bisa menimpa file sistem.
+    """
     if not upload_file:
         return None
     
-    # Buat nama file unik: nik_namafile.jpg (untuk menghindari nama kembar)
-    # Tapi demi kesederhanaan, kita pakai timestamp + nama asli
-    timestamp = int(datetime.now().timestamp())
-    filename = f"{timestamp}_{upload_file.filename}"
-    file_path = os.path.join(destination_folder, filename)
+    # 1. Cek Content-Type (Header file)
+    if upload_file.content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Tipe file {upload_file.filename} tidak valid! Hanya boleh JPG/PNG."
+        )
+
+    # 2. Cek Ekstensi File
+    file_ext = os.path.splitext(upload_file.filename)[1].lower()
+    if file_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Ekstensi file {upload_file.filename} harus .jpg atau .png"
+        )
     
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(upload_file.file, buffer)
+    # 3. Rename File (PENTING: Gunakan UUID agar nama file tidak bisa ditebak)
+    # Contoh hasil: a1b2-c3d4-e5f6.jpg
+    unique_filename = f"{uuid.uuid4()}{file_ext}"
+    file_path = os.path.join(destination_folder, unique_filename)
+    
+    # 4. Simpan File
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(upload_file.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Gagal menyimpan file ke server.")
         
     return file_path
 
 
-# --- ENDPOINT 1: REGISTRASI TAMU BARU (ADMIN) ---
-@app.post("/visitors/")
+# --- API ENDPOINTS ---
+
+@app.post("/visitors/", status_code=status.HTTP_201_CREATED)
 def create_visitor(
-    nik: str = Form(...),
+    nik: str = Form(..., min_length=3, max_length=20), # Validasi panjang NIK
     full_name: str = Form(...),
     institution: str = Form(...),
     phone: str = Form(None),
-    photo: UploadFile = File(None),
+    photo: UploadFile = File(...),      # Foto Wajah WAJIB ada
     ktp: UploadFile = File(None),
     task_letter: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
-    # Cek apakah NIK sudah ada
+    # OPTIMASI: Cek NIK dulu sebelum proses upload file (biar hemat resource server)
     existing_visitor = db.query(models.Visitor).filter(models.Visitor.nik == nik).first()
     if existing_visitor:
-        raise HTTPException(status_code=400, detail="NIK sudah terdaftar!")
+        raise HTTPException(status_code=400, detail="NIK ini sudah terdaftar sebelumnya.")
 
-    # Simpan file-file (jika ada yang diupload)
-    photo_path = save_upload_file(photo)
-    ktp_path = save_upload_file(ktp)
-    task_letter_path = save_upload_file(task_letter)
+    # Proses Upload dengan Validasi Keamanan
+    photo_path = validate_and_save_file(photo, UPLOAD_DIR)
+    ktp_path = validate_and_save_file(ktp, UPLOAD_DIR)
+    task_letter_path = validate_and_save_file(task_letter, UPLOAD_DIR)
 
-    # Simpan data ke Database
     new_visitor = models.Visitor(
         nik=nik,
         full_name=full_name,
@@ -87,50 +114,53 @@ def create_visitor(
     db.commit()
     db.refresh(new_visitor)
     
-    return {"message": "Tamu berhasil didaftarkan", "data": new_visitor}
+    return {"status": "success", "message": "Data tamu berhasil diamankan dan disimpan.", "data_nik": new_visitor.nik}
 
 
-# --- ENDPOINT 2: LOGIN TAMU (CEK DATA) ---
 @app.get("/visitors/{nik}")
 def get_visitor(nik: str, db: Session = Depends(get_db)):
     visitor = db.query(models.Visitor).filter(models.Visitor.nik == nik).first()
     if not visitor:
-        raise HTTPException(status_code=404, detail="Data tamu tidak ditemukan. Silakan lapor Admin.")
+        raise HTTPException(status_code=404, detail="Data tamu tidak ditemukan.")
     return visitor
 
 
-# --- ENDPOINT 3: CHECK-IN (MASUK) ---
 @app.post("/check-in/")
 def check_in(nik: str = Form(...), db: Session = Depends(get_db)):
-    # 1. Cek User ada atau tidak
-    visitor = db.query(models.Visitor).filter(models.Visitor.nik == nik).first()
+    # 1. Cek Visitor (Query Ringan)
+    visitor = db.query(models.Visitor.nik, models.Visitor.full_name).filter(models.Visitor.nik == nik).first()
     if not visitor:
-        raise HTTPException(status_code=404, detail="NIK tidak ditemukan")
+        raise HTTPException(status_code=404, detail="NIK tidak ditemukan dalam database.")
 
-    # 2. Cek apakah dia sudah check-in tapi belum check-out hari ini?
+    # 2. Cek Double Check-in (Optimized Query)
+    # Kita hanya ambil field 'id', tidak perlu load seluruh data log yg berat
     today = datetime.now().date()
-    active_visit = db.query(models.VisitLog).filter(
+    active_visit = db.query(models.VisitLog.id).filter(
         models.VisitLog.visitor_nik == nik,
         models.VisitLog.visit_date == today,
         models.VisitLog.check_out_time == None
     ).first()
 
     if active_visit:
-        raise HTTPException(status_code=400, detail="Anda sudah Check-In dan belum Check-Out!")
+        raise HTTPException(status_code=400, detail="Anda tercatat masih di dalam gedung (Belum Check-Out).")
 
     # 3. Catat Masuk
     new_log = models.VisitLog(visitor_nik=nik)
     db.add(new_log)
     db.commit()
     
-    return {"message": f"Selamat Datang, {visitor.full_name}!", "status": "Check-In Berhasil"}
+    return {
+        "status": "success", 
+        "message": f"Selamat Datang, {visitor.full_name}", 
+        "time": datetime.now()
+    }
 
 
-# --- ENDPOINT 4: CHECK-OUT (KELUAR) ---
 @app.post("/check-out/")
 def check_out(nik: str = Form(...), db: Session = Depends(get_db)):
-    # Cari log hari ini yang check_out-nya masih Kosong (None)
     today = datetime.now().date()
+    
+    # Cari record yang logikanya: NIK sama + Hari ini + Jam keluar masih kosong
     active_visit = db.query(models.VisitLog).filter(
         models.VisitLog.visitor_nik == nik,
         models.VisitLog.visit_date == today,
@@ -138,10 +168,9 @@ def check_out(nik: str = Form(...), db: Session = Depends(get_db)):
     ).first()
 
     if not active_visit:
-        raise HTTPException(status_code=400, detail="Anda belum melakukan Check-In hari ini atau sudah Check-Out.")
+        raise HTTPException(status_code=400, detail="Gagal Check-Out. Anda belum Check-In hari ini atau sudah keluar.")
 
-    # Update waktu keluar
     active_visit.check_out_time = datetime.now()
     db.commit()
 
-    return {"message": "Hati-hati di jalan!", "status": "Check-Out Berhasil"}
+    return {"status": "success", "message": "Terima kasih, hati-hati di jalan!"}
