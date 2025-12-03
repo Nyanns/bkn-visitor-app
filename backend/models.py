@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
 
-# Tabel Pengunjung (Visitor)
+# Tabel 1: Pengunjung (Visitor)
 class Visitor(Base):
     __tablename__ = "visitors"
 
@@ -13,7 +13,7 @@ class Visitor(Base):
     institution = Column(String, nullable=False)
     phone = Column(String, nullable=True)
     
-    # Path Foto (Disimpan string path-nya saja)
+    # Path Foto
     photo_path = Column(String, nullable=True)
     ktp_path = Column(String, nullable=True)
     task_letter_path = Column(String, nullable=True)
@@ -22,7 +22,7 @@ class Visitor(Base):
 
     logs = relationship("VisitLog", back_populates="visitor")
 
-# Tabel Log Kunjungan
+# Tabel 2: Log Kunjungan
 class VisitLog(Base):
     __tablename__ = "visit_logs"
 
@@ -34,3 +34,11 @@ class VisitLog(Base):
     check_out_time = Column(DateTime, nullable=True)
     
     visitor = relationship("Visitor", back_populates="logs")
+
+# Tabel 3: Admin (INI YANG TADI HILANG)
+class Admin(Base):
+    __tablename__ = "admins"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    password_hash = Column(String)
