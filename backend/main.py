@@ -254,3 +254,52 @@ def check_out(nik: str = Form(...), db: Session = Depends(get_db)):
         message="Terima kasih, hati-hati di jalan!",
         time=now_jkt.strftime("%H:%M:%S")
     )
+
+# --- UPDATE DI backend/main.py (Tambahkan di paling bawah) ---
+
+# Schema khusus untuk respon Laporan
+class LogResponse(BaseModel):
+    id: int
+    nik: str
+    full_name: str
+    institution: str
+    check_in_time: datetime
+    check_out_time: Optional[datetime] = None
+    status: str
+    photo_url: Optional[str] = None
+
+@app.get("/admin/logs", response_model=List[LogResponse], tags=["Admin"])
+def get_admin_logs(db: Session = Depends(get_db)):
+    """
+    Mengambil semua data riwayat kunjungan (Join Table Visitors & VisitLogs)
+    Diurutkan dari yang paling baru masuk.
+    """
+    # Join tabel Logs dengan Visitor
+    results = db.query(models.VisitLog, models.Visitor)\
+        .join(models.Visitor, models.VisitLog.visitor_nik == models.Visitor.nik)\
+        .order_by(models.VisitLog.check_in_time.desc())\
+        .all()
+    
+    logs_data = []
+    for log, visitor in results:
+        # Tentukan status
+        status_visit = "Selesai" if log.check_out_time else "Sedang Berkunjung"
+        
+        # Format URL Foto
+        photo_url = None
+        if visitor.photo_path:
+            filename = os.path.basename(visitor.photo_path)
+            photo_url = f"/uploads/{filename}"
+
+        logs_data.append({
+            "id": log.id,
+            "nik": visitor.nik,
+            "full_name": visitor.full_name,
+            "institution": visitor.institution,
+            "check_in_time": log.check_in_time,
+            "check_out_time": log.check_out_time,
+            "status": status_visit,
+            "photo_url": photo_url
+        })
+        
+    return logs_data
