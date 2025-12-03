@@ -1,28 +1,40 @@
-// File: frontend/src/main.jsx (YANG BENAR)
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { ChakraProvider } from '@chakra-ui/react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom' // <--- PENTING
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
-// Import Halaman
 import App from './App.jsx'
+import AdminLoginPage from './pages/AdminLoginPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
 import AdminDashboard from './pages/AdminDashboard.jsx'
+import ProtectedRoute from './components/ProtectedRoute.jsx' // Import Satpam
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ChakraProvider>
-      <BrowserRouter>  {/* <--- Router harus membungkus Routes */}
+      <BrowserRouter>
         <Routes>
-          {/* Jalur Tamu */}
+          {/* USER (Bebas Akses) */}
           <Route path="/" element={<App />} />
 
-          {/* Jalur Admin */}
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/register" element={<AdminPage />} />
+          {/* ADMIN LOGIN (Pintu Masuk) */}
+          <Route path="/admin/login" element={<AdminLoginPage />} />
 
-          {/* Redirect */}
-          <Route path="/admin" element={<AdminDashboard />} />
+          {/* ADMIN AREA (Dilindungi Satpam) */}
+          <Route path="/admin/dashboard" element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/register" element={
+            <ProtectedRoute>
+              <AdminPage />
+            </ProtectedRoute>
+          } />
+
+          {/* Redirect Default */}
+          <Route path="/admin" element={<AdminLoginPage />} />
         </Routes>
       </BrowserRouter>
     </ChakraProvider>
