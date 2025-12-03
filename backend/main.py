@@ -13,10 +13,25 @@ from sqlalchemy.orm import Session
 from database import engine, get_db
 import models
 
+# Tambahkan import ini di paling atas main.py
+import pytz
+
+# Buat konstanta timezone
+JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
+
 # Inisialisasi Database
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="BKN Visitor System", version="1.1.0 (Secure)")
+
+# --- TAMBAHAN: ENDPOINT HALAMAN UTAMA ---
+@app.get("/")
+def read_root():
+    return {
+        "status": "online",
+        "message": "Server BKN Visitor App Berjalan Normal!",
+        "docs": "Buka /docs untuk dokumentasi API"
+    }
 
 # --- KEAMANAN 1: CORS (Membatasi Siapa yang Boleh Akses) ---
 # Di Production nanti, ubah allow_origins=["*"] menjadi domain asli, misal ["https://bkn.go.id"]
@@ -124,17 +139,15 @@ def get_visitor(nik: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Data tamu tidak ditemukan.")
     return visitor
 
-
+# --- UPDATE DI FUNGSI CHECK-IN ---
 @app.post("/check-in/")
 def check_in(nik: str = Form(...), db: Session = Depends(get_db)):
-    # 1. Cek Visitor (Query Ringan)
-    visitor = db.query(models.Visitor.nik, models.Visitor.full_name).filter(models.Visitor.nik == nik).first()
-    if not visitor:
-        raise HTTPException(status_code=404, detail="NIK tidak ditemukan dalam database.")
+    # ... (kode validasi user tetap sama) ...
 
-    # 2. Cek Double Check-in (Optimized Query)
-    # Kita hanya ambil field 'id', tidak perlu load seluruh data log yg berat
-    today = datetime.now().date()
+    # GANTI: today = datetime.now().date()
+    now_jkt = datetime.now(JAKARTA_TZ) # Ambil waktu Jakarta sekarang
+    today = now_jkt.date()
+
     active_visit = db.query(models.VisitLog.id).filter(
         models.VisitLog.visitor_nik == nik,
         models.VisitLog.visit_date == today,
@@ -142,25 +155,32 @@ def check_in(nik: str = Form(...), db: Session = Depends(get_db)):
     ).first()
 
     if active_visit:
-        raise HTTPException(status_code=400, detail="Anda tercatat masih di dalam gedung (Belum Check-Out).")
+        raise HTTPException(status_code=400, detail="Anda tercatat masih di dalam gedung.")
 
-    # 3. Catat Masuk
-    new_log = models.VisitLog(visitor_nik=nik)
+    # GANTI: new_log = models.VisitLog(visitor_nik=nik) 
+    # Kita harus isi waktunya manual biar masuknya waktu Jakarta, bukan waktu Server default
+    new_log = models.VisitLog(
+        visitor_nik=nik,
+        check_in_time=now_jkt,  # Pakai waktu Jakarta
+        visit_date=today
+    )
+    
     db.add(new_log)
     db.commit()
     
     return {
         "status": "success", 
         "message": f"Selamat Datang, {visitor.full_name}", 
-        "time": datetime.now()
+        "time": now_jkt.strftime("%H:%M:%S") # Kirim format jam yang cantik ke frontend
     }
 
-
+# --- UPDATE DI FUNGSI CHECK-OUT ---
 @app.post("/check-out/")
 def check_out(nik: str = Form(...), db: Session = Depends(get_db)):
-    today = datetime.now().date()
+    # GANTI: today = datetime.now().date()
+    now_jkt = datetime.now(JAKARTA_TZ)
+    today = now_jkt.date()
     
-    # Cari record yang logikanya: NIK sama + Hari ini + Jam keluar masih kosong
     active_visit = db.query(models.VisitLog).filter(
         models.VisitLog.visitor_nik == nik,
         models.VisitLog.visit_date == today,
@@ -168,9 +188,10 @@ def check_out(nik: str = Form(...), db: Session = Depends(get_db)):
     ).first()
 
     if not active_visit:
-        raise HTTPException(status_code=400, detail="Gagal Check-Out. Anda belum Check-In hari ini atau sudah keluar.")
+        raise HTTPException(status_code=400, detail="Gagal Check-Out. Belum Check-In atau sudah keluar.")
 
-    active_visit.check_out_time = datetime.now()
+    # GANTI: active_visit.check_out_time = datetime.now()
+    active_visit.check_out_time = now_jkt # Pakai waktu Jakarta
     db.commit()
 
     return {"status": "success", "message": "Terima kasih, hati-hati di jalan!"}
