@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 import {
     Box, Table, Thead, Tbody, Tr, Th, Td, Badge, Heading,
     Container, Image, Text, Button, HStack, Input, InputGroup,
-    InputLeftElement, Card, CardBody, useToast, Spinner, Center
+    InputLeftElement, Card, CardBody, useToast, Spinner, Center,
+    IconButton, Tooltip
 } from '@chakra-ui/react';
-import { FaSearch, FaSync, FaUserPlus, FaFileExport } from 'react-icons/fa';
+import { FaSearch, FaSync, FaUserPlus, FaSignOutAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
@@ -16,14 +17,17 @@ function AdminDashboard() {
     const navigate = useNavigate();
     const toast = useToast();
 
-    // Fungsi ambil data dari Backend
     const fetchLogs = async () => {
         setLoading(true);
         try {
             const response = await api.get('/admin/logs');
             setLogs(response.data);
         } catch (error) {
-            toast({ title: "Gagal memuat data", status: "error" });
+            toast({ title: "Gagal memuat data", status: "error", position: "top" });
+            // Jika token expired, otomatis logout
+            if (error.response && error.response.status === 401) {
+                handleLogout();
+            }
         } finally {
             setLoading(false);
         }
@@ -33,7 +37,18 @@ function AdminDashboard() {
         fetchLogs();
     }, []);
 
-    // Format Tanggal & Jam (Indonesia)
+    // --- FUNGSI LOGOUT (BARU) ---
+    const handleLogout = () => {
+        // 1. Hapus Token dari Saku (LocalStorage)
+        localStorage.removeItem('adminToken');
+
+        // 2. Beri pesan
+        toast({ title: "Logout Berhasil", status: "info", position: "top" });
+
+        // 3. Tendang ke Halaman Login
+        navigate('/admin/login');
+    };
+
     const formatTime = (isoString) => {
         if (!isoString) return "-";
         return new Date(isoString).toLocaleString('id-ID', {
@@ -41,7 +56,6 @@ function AdminDashboard() {
         });
     };
 
-    // Filter pencarian
     const filteredLogs = logs.filter(log =>
         log.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         log.institution.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -58,17 +72,33 @@ function AdminDashboard() {
                         <Heading color="blue.700" size="lg">Dashboard Monitoring</Heading>
                         <Text color="gray.500">Pantau aktivitas pengunjung secara real-time</Text>
                     </Box>
-                    <HStack>
+
+                    <HStack spacing={3}>
+                        {/* Tombol Registrasi */}
                         <Button
                             leftIcon={<FaUserPlus />}
                             colorScheme="blue"
-                            onClick={() => navigate('/admin/register')} // Pastikan alamatnya '/admin/register'
+                            onClick={() => navigate('/admin/register')}
                         >
                             Registrasi Baru
                         </Button>
-                        {/* Tombol Refresh Manual */}
-                        <Button leftIcon={<FaSync />} onClick={fetchLogs} isLoading={loading}>
-                            Refresh
+
+                        {/* Tombol Refresh */}
+                        <IconButton
+                            icon={<FaSync />}
+                            aria-label="Refresh Data"
+                            onClick={fetchLogs}
+                            isLoading={loading}
+                        />
+
+                        {/* --- TOMBOL LOGOUT (BARU) --- */}
+                        <Button
+                            leftIcon={<FaSignOutAlt />}
+                            colorScheme="red"
+                            variant="outline"
+                            onClick={handleLogout}
+                        >
+                            Logout
                         </Button>
                     </HStack>
                 </HStack>
