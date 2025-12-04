@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from passlib.context import CryptContext
+import bcrypt
 from jose import JWTError, jwt
 
 # Import file lokal
@@ -29,7 +29,7 @@ SECRET_KEY = "RAHASIA_NEGARA_BKN_GANTI_INI_DENGAN_STRING_ACAK_PANJANG"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 # Login berlaku 1 jam
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token") # URL untuk login
 
 # --- 2. KONFIGURASI UTAMA ---
@@ -64,10 +64,14 @@ class Token(BaseModel):
 # --- 5. FUNGSI KEAMANAN (HELPER) ---
 
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    if isinstance(hashed_password, str):
+        hashed_password = hashed_password.encode('utf-8')
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password)
 
 def get_password_hash(password):
-    return pwd_context.hash(password)
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed.decode('utf-8')
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -136,10 +140,11 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
 # === BUAT ADMIN PERTAMA KALI (Hanya bisa sekali jalan via docs, atau matikan nanti) ===
 @app.post("/setup-admin")
 def create_initial_admin(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    # Cek apakah admin sudah ada (di luar try-except agar error 400 tidak tertangkap sebagai 500)
+    if db.query(models.Admin).first():
+        raise HTTPException(status_code=400, detail="Admin sudah ada. Gunakan login.")
+
     try:
-        if db.query(models.Admin).first():
-            raise HTTPException(status_code=400, detail="Admin sudah ada. Gunakan login.")
-        
         hashed_password = get_password_hash(password)
         new_admin = models.Admin(username=username, password_hash=hashed_password)
         db.add(new_admin)
