@@ -77,7 +77,6 @@ function AdminDashboard() {
         <Box bg="gray.50" minH="100vh" py={8}>
             <Container maxW="container.xl">
 
-                {/* Header Dashboard */}
                 <HStack justifyContent="space-between" mb={8} wrap="wrap" spacing={4}>
                     <Box>
                         <Heading color="blue.700" size="lg">Dashboard Monitoring Tamu</Heading>
@@ -88,7 +87,6 @@ function AdminDashboard() {
                     </Box>
 
                     <HStack spacing={3}>
-                        {/* Tombol Export Excel */}
                         <Button
                             leftIcon={<FaFileExcel />}
                             colorScheme="green"
@@ -98,7 +96,6 @@ function AdminDashboard() {
                             Export Excel
                         </Button>
 
-                        {/* Tombol Registrasi */}
                         <Button
                             leftIcon={<FaUserPlus />}
                             colorScheme="blue"
@@ -107,7 +104,6 @@ function AdminDashboard() {
                             Registrasi Baru
                         </Button>
 
-                        {/* Tombol Refresh */}
                         <IconButton
                             icon={<FaSync />}
                             aria-label="Refresh Data"
@@ -115,7 +111,6 @@ function AdminDashboard() {
                             isLoading={loading}
                         />
 
-                        {/* Tombol Logout */}
                         <Button
                             leftIcon={<FaSignOutAlt />}
                             colorScheme="red"
@@ -123,15 +118,13 @@ function AdminDashboard() {
                             onClick={handleLogout}
                         >
                             Logout
-                        </Button}
+                        </Button>
                     </HStack>
                 </HStack>
 
-                {/* Card Tabel */}
                 <Card boxShadow="lg" bg="white" borderRadius="xl" overflow="hidden">
                     <CardBody p={0}>
 
-                        {/* Toolbar Pencarian */}
                         <Box p={4} borderBottom="1px solid" borderColor="gray.100" bg="white">
                             <InputGroup maxW="400px">
                                 <InputLeftElement pointerEvents="none"><FaSearch color="gray" /></InputLeftElement>
@@ -143,7 +136,6 @@ function AdminDashboard() {
                             </InputGroup>
                         </Box>
 
-                        {/* Tabel Data */}
                         <Box overflowX="auto">
                             <Table variant="simple" size="md">
                                 <Thead bg="gray.50">
