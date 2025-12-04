@@ -4,7 +4,7 @@ import {
     Box, Table, Thead, Tbody, Tr, Th, Td, Badge, Heading,
     Container, Image, Text, Button, HStack, Input, InputGroup,
     InputLeftElement, Card, CardBody, useToast, Spinner, Center,
-    IconButton, Tooltip
+    IconButton
 } from '@chakra-ui/react';
 import { FaSearch, FaSync, FaUserPlus, FaSignOutAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
@@ -37,15 +37,9 @@ function AdminDashboard() {
         fetchLogs();
     }, []);
 
-    // --- FUNGSI LOGOUT (BARU) ---
     const handleLogout = () => {
-        // 1. Hapus Token dari Saku (LocalStorage)
         localStorage.removeItem('adminToken');
-
-        // 2. Beri pesan
         toast({ title: "Logout Berhasil", status: "info", position: "top" });
-
-        // 3. Tendang ke Halaman Login
         navigate('/admin/login');
     };
 
@@ -69,8 +63,11 @@ function AdminDashboard() {
                 {/* Header Dashboard */}
                 <HStack justifyContent="space-between" mb={8} wrap="wrap" spacing={4}>
                     <Box>
-                        <Heading color="blue.700" size="lg">Dashboard Monitoring</Heading>
-                        <Text color="gray.500">Pantau aktivitas pengunjung secara real-time</Text>
+                        <Heading color="blue.700" size="lg">Dashboard Monitoring Tamu</Heading>
+                        <Text color="blue.600" fontSize="sm" fontWeight="semibold">
+                            Direktorat Infrastruktur Teknologi Informasi dan Keamanan Informasi
+                        </Text>
+                        <Text color="gray.500" fontSize="xs">Badan Kepegawaian Negara</Text>
                     </Box>
 
                     <HStack spacing={3}>
@@ -91,7 +88,7 @@ function AdminDashboard() {
                             isLoading={loading}
                         />
 
-                        {/* --- TOMBOL LOGOUT (BARU) --- */}
+                        {/* Tombol Logout */}
                         <Button
                             leftIcon={<FaSignOutAlt />}
                             colorScheme="red"

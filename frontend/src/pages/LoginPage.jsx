@@ -87,7 +87,7 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
             </Card>
 
             <Text fontSize="xs" color="gray.400" textAlign="center" mt={2}>
-                Sistem Buku Tamu Digital BKN © 2025
+                Sistem Buku Tamu Digital INTIKAMI © 2025
             </Text>
 
         </VStack>

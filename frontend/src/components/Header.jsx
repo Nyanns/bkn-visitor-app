@@ -17,7 +17,7 @@ function Header() {
                     Buku Tamu Digital
                 </Heading>
                 <Text color="gray.500" fontWeight="medium">
-                    Direktorat Pengelolaan Data ASN - BKN
+                    Direktorat Infrastruktur Teknologi Informasi dan Keamanan Informasi
                 </Text>
             </Box>
         </VStack>
