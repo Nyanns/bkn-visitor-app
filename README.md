@@ -36,6 +36,7 @@ Berikut adalah perubahan penting yang telah dilakukan untuk meningkatkan keamana
 3. Buat file `.env` (jika belum ada) dan isi konfigurasi:
    ```env
    SECRET_KEY=isi_dengan_string_acak_yang_panjang_dan_rahasia
+   DATABASE_URL=postgresql://postgres:passwordmu@localhost:5432/postgres
    ALLOW_SETUP_ADMIN=true  # Hapus atau set false setelah admin dibuat
    ```
 4. Jalankan server:
