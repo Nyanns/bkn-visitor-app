@@ -47,8 +47,8 @@ models.Base.metadata.create_all(bind=engine)
 # --- 1. KONFIGURASI KEAMANAN (JWT) ---
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
-    SECRET_KEY = "DEFAULT_DEV_SECRET_CHANGE_ME"
-    logger.warning("SECRET_KEY not found in .env, using default!")
+    # Error kalau lupa bikin .env
+    raise ValueError("FATAL: SECRET_KEY belum disetting di file .env!")
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
