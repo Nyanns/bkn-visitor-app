@@ -5,9 +5,9 @@ import {
     Heading, useToast, VStack, Card, CardBody, Text, Divider,
     InputGroup, InputLeftElement
 } from '@chakra-ui/react';
-import { FaUserPlus, FaBuilding, FaIdCard, FaCamera, FaArrowLeft } from 'react-icons/fa';
+import { FaUserPlus, FaBuilding, FaIdCard, FaArrowLeft } from 'react-icons/fa';
 import api from '../api';
-import { useNavigate } from 'react-router-dom'; // <--- Wajib ada!
+import { useNavigate } from 'react-router-dom';
 
 function AdminPage() {
     const [formData, setFormData] = useState({
@@ -19,7 +19,7 @@ function AdminPage() {
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
     const toast = useToast();
-    const navigate = useNavigate(); // <--- Wajib ada!
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -65,7 +65,6 @@ function AdminPage() {
     return (
         <Box bg="blue.50" minH="100vh" py={10}>
             <Container maxW="md">
-                {/* --- TAMBAHKAN TOMBOL INI DI ATAS --- */}
                 <Button
                     variant="ghost"
                     mb={4}
@@ -74,11 +73,14 @@ function AdminPage() {
                 >
                     Kembali ke Dashboard
                 </Button>
-                {/* ------------------------------------ */}
+
                 <VStack spacing={6}>
                     <Box textAlign="center">
-                        <Heading color="blue.700" size="lg">Panel Admin BKN</Heading>
-                        <Text color="gray.500" fontSize="sm">Registrasi Tamu Baru</Text>
+                        <Heading color="blue.700" size="lg">Daftar Tamu</Heading>
+                        <Text color="blue.600" fontSize="md" fontWeight="semibold" mt={1}>
+                            Direktorat Infrastruktur Teknologi Informasi dan Keamanan Informasi
+                        </Text>
+                        <Text color="gray.500" fontSize="sm" mt={1}>Badan Kepegawaian Negara</Text>
                     </Box>
 
                     <Card w="full" boxShadow="xl" borderRadius="2xl" bg="white">
@@ -105,7 +107,7 @@ function AdminPage() {
                                     <FormLabel fontSize="sm" fontWeight="bold" color="gray.600">Instansi</FormLabel>
                                     <InputGroup>
                                         <InputLeftElement pointerEvents="none"><FaBuilding color="gray" /></InputLeftElement>
-                                        <Input name="institution" placeholder="Asal Instansi" value={formData.institution} onChange={handleChange} bg="gray.50" />
+                                        <Input name="institution" placeholder="Contoh: Kementerian PANRB, PT. Telkom" value={formData.institution} onChange={handleChange} bg="gray.50" />
                                     </InputGroup>
                                 </FormControl>
 
