@@ -1,11 +1,11 @@
+// File: frontend/src/components/VisitorCard.jsx
+// Google Material Design Style
 import {
-    Box, Card, CardBody, Image, Heading, Text, Badge, Divider,
-    VStack, Icon
+    Box, Image, Heading, Text, Badge, VStack, HStack, Flex
 } from '@chakra-ui/react';
-import { FaIdCard } from 'react-icons/fa';
+import { FaIdCard, FaBuilding } from 'react-icons/fa';
 
 function VisitorCard({ data }) {
-    // SAFETY CHECK: Kalau data kosong, jangan render apa-apa
     if (!data) return null;
 
     const getPhotoUrl = (path) => {
@@ -15,38 +15,69 @@ function VisitorCard({ data }) {
     };
 
     return (
-        <Card w="full" boxShadow="2xl" borderRadius="3xl" overflow="hidden" bg="white">
-            <Box h="100px" bgGradient="linear(to-r, blue.500, blue.600)" />
+        <Box
+            w="full"
+            bg="white"
+            borderRadius="20px"
+            boxShadow="0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15)"
+            overflow="hidden"
+        >
+            {/* Gradient Header */}
+            <Box
+                h="80px"
+                bgGradient="linear(135deg, #667eea 0%, #764ba2 100%)"
+            />
 
-            <CardBody textAlign="center" mt="-60px">
-                <Box position="relative" display="inline-block">
-                    <Image
+            {/* Profile Content */}
+            <Box textAlign="center" mt="-50px" pb={6} px={6}>
+                {/* Photo */}
+                <Image
+                    borderRadius="full"
+                    boxSize="100px"
+                    src={getPhotoUrl(data.photo_path)}
+                    alt="Foto Profil"
+                    border="4px solid white"
+                    boxShadow="0 4px 12px rgba(0,0,0,0.15)"
+                    objectFit="cover"
+                    bg="#f8f9fa"
+                    mx="auto"
+                />
+
+                {/* Info */}
+                <VStack spacing={2} mt={4}>
+                    <Heading
+                        size="md"
+                        color="#202124"
+                        fontFamily="'Google Sans', 'Inter', sans-serif"
+                        fontWeight="500"
+                    >
+                        {data.full_name || "Nama Tidak Ada"}
+                    </Heading>
+
+                    <Badge
+                        bg="#e8f0fe"
+                        color="#1a73e8"
+                        px={4}
+                        py={1.5}
                         borderRadius="full"
-                        boxSize="130px"
-                        src={getPhotoUrl(data.photo_path)}
-                        alt="Foto Profil"
-                        border="5px solid white"
-                        boxShadow="lg"
-                        objectFit="cover"
-                        bg="gray.200"
-                    />
-                </Box>
-
-                <VStack spacing={1} mt={4}>
-                    <Heading size="md" color="gray.700">{data.full_name || "Nama Tidak Ada"}</Heading>
-
-                    <Badge colorScheme="blue" variant="subtle" px={3} py={1} borderRadius="full">
-                        <Icon as={FaIdCard} mr={1} /> {data.nik || "-"}
+                        fontSize="sm"
+                        fontWeight="500"
+                    >
+                        <HStack spacing={2}>
+                            <FaIdCard />
+                            <Text>{data.nik || "-"}</Text>
+                        </HStack>
                     </Badge>
 
-                    <Text color="gray.500" fontSize="sm" fontWeight="medium">
-                        {data.institution || "Instansi Tidak Diketahui"}
-                    </Text>
+                    <HStack spacing={1} color="#5f6368">
+                        <FaBuilding size="12px" />
+                        <Text fontSize="sm">
+                            {data.institution || "Instansi Tidak Diketahui"}
+                        </Text>
+                    </HStack>
                 </VStack>
-
-                <Divider my={6} borderColor="gray.100" />
-            </CardBody>
-        </Card>
+            </Box>
+        </Box>
     );
 }
 

@@ -1,12 +1,13 @@
 // File: frontend/src/pages/AdminDashboard.jsx
+// Google Material Design Style - Admin Dashboard
 import { useState, useEffect } from 'react';
 import {
     Box, Table, Thead, Tbody, Tr, Th, Td, Badge, Heading,
     Container, Image, Text, Button, HStack, Input, InputGroup,
-    InputLeftElement, Card, CardBody, useToast, Spinner, Center,
-    IconButton
+    InputLeftElement, useToast, Spinner, Center, Flex, VStack,
+    IconButton, Stat, StatLabel, StatNumber, StatHelpText, SimpleGrid
 } from '@chakra-ui/react';
-import { FaSearch, FaSync, FaUserPlus, FaSignOutAlt, FaFileExcel } from 'react-icons/fa';
+import { FaSearch, FaSync, FaUserPlus, FaSignOutAlt, FaFileExcel, FaUsers, FaUserCheck, FaCalendarAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
@@ -73,133 +74,206 @@ function AdminDashboard() {
         log.nik.includes(searchTerm)
     );
 
+    // Stats calculations
+    const totalVisitors = logs.length;
+    const activeVisitors = logs.filter(log => log.status === "Sedang Berkunjung").length;
+    const todayDate = new Date().toLocaleDateString('id-ID');
+
     return (
-        <Box bg="gray.50" minH="100vh" py={8}>
-            <Container maxW="container.xl">
-
-                <HStack justifyContent="space-between" mb={8} wrap="wrap" spacing={4}>
-                    <Box>
-                        <Heading color="blue.700" size="lg">Dashboard Monitoring Tamu</Heading>
-                        <Text color="blue.600" fontSize="sm" fontWeight="semibold">
-                            Direktorat Infrastruktur Teknologi Informasi dan Keamanan Informasi
-                        </Text>
-                        <Text color="gray.500" fontSize="xs">Badan Kepegawaian Negara</Text>
-                    </Box>
-
+        <Box bg="#f8f9fa" minH="100vh">
+            {/* Top Navigation Bar */}
+            <Box
+                bg="white"
+                py={4}
+                px={6}
+                borderBottom="1px solid #dadce0"
+                position="sticky"
+                top={0}
+                zIndex={10}
+            >
+                <Flex justify="space-between" align="center" maxW="1400px" mx="auto">
                     <HStack spacing={3}>
+                        <Box
+                            w="40px"
+                            h="40px"
+                            bg="#1a73e8"
+                            borderRadius="8px"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                        >
+                            <FaUsers color="white" />
+                        </Box>
+                        <VStack align="start" spacing={0}>
+                            <Heading size="sm" color="#202124" fontWeight="500">
+                                Dashboard Monitoring
+                            </Heading>
+                            <Text fontSize="xs" color="#5f6368">
+                                Direktorat INTIKAMI - BKN
+                            </Text>
+                        </VStack>
+                    </HStack>
+
+                    <HStack spacing={2}>
                         <Button
                             leftIcon={<FaFileExcel />}
-                            colorScheme="green"
-                            variant="outline"
+                            bg="#34a853"
+                            color="white"
+                            size="sm"
+                            borderRadius="8px"
+                            _hover={{ bg: "#2d9649" }}
                             onClick={handleExportExcel}
                         >
-                            Export Excel
+                            Export
                         </Button>
-
                         <Button
                             leftIcon={<FaUserPlus />}
-                            colorScheme="blue"
+                            bg="#1a73e8"
+                            color="white"
+                            size="sm"
+                            borderRadius="8px"
+                            _hover={{ bg: "#1557b0" }}
                             onClick={() => navigate('/admin/register')}
                         >
-                            Registrasi Baru
+                            Registrasi
                         </Button>
-
                         <IconButton
                             icon={<FaSync />}
-                            aria-label="Refresh Data"
+                            aria-label="Refresh"
+                            variant="ghost"
+                            size="sm"
                             onClick={fetchLogs}
                             isLoading={loading}
                         />
-
                         <Button
                             leftIcon={<FaSignOutAlt />}
-                            colorScheme="red"
-                            variant="outline"
+                            variant="ghost"
+                            size="sm"
+                            color="#5f6368"
                             onClick={handleLogout}
                         >
                             Logout
                         </Button>
                     </HStack>
-                </HStack>
+                </Flex>
+            </Box>
 
-                <Card boxShadow="lg" bg="white" borderRadius="xl" overflow="hidden">
-                    <CardBody p={0}>
+            {/* Main Content */}
+            <Container maxW="1400px" py={6}>
+                {/* Stats Cards */}
+                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={6}>
+                    <Box bg="white" p={5} borderRadius="12px" boxShadow="0 1px 2px 0 rgba(60,64,67,.1)">
+                        <Stat>
+                            <StatLabel color="#5f6368" fontSize="sm">Total Kunjungan</StatLabel>
+                            <StatNumber color="#202124" fontSize="3xl">{totalVisitors}</StatNumber>
+                            <StatHelpText color="#5f6368">
+                                <HStack><FaCalendarAlt /><Text>Hari ini: {todayDate}</Text></HStack>
+                            </StatHelpText>
+                        </Stat>
+                    </Box>
+                    <Box bg="white" p={5} borderRadius="12px" boxShadow="0 1px 2px 0 rgba(60,64,67,.1)">
+                        <Stat>
+                            <StatLabel color="#5f6368" fontSize="sm">Sedang Berkunjung</StatLabel>
+                            <StatNumber color="#34a853" fontSize="3xl">{activeVisitors}</StatNumber>
+                            <StatHelpText color="#34a853">
+                                <HStack><FaUserCheck /><Text>Aktif saat ini</Text></HStack>
+                            </StatHelpText>
+                        </Stat>
+                    </Box>
+                    <Box bg="white" p={5} borderRadius="12px" boxShadow="0 1px 2px 0 rgba(60,64,67,.1)">
+                        <Stat>
+                            <StatLabel color="#5f6368" fontSize="sm">Selesai Berkunjung</StatLabel>
+                            <StatNumber color="#5f6368" fontSize="3xl">{totalVisitors - activeVisitors}</StatNumber>
+                            <StatHelpText color="#5f6368">
+                                <Text>Sudah check-out</Text>
+                            </StatHelpText>
+                        </Stat>
+                    </Box>
+                </SimpleGrid>
 
-                        <Box p={4} borderBottom="1px solid" borderColor="gray.100" bg="white">
-                            <InputGroup maxW="400px">
-                                <InputLeftElement pointerEvents="none"><FaSearch color="gray" /></InputLeftElement>
-                                <Input
-                                    placeholder="Cari Nama / NIK / Instansi..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </InputGroup>
-                        </Box>
+                {/* Table Card */}
+                <Box bg="white" borderRadius="12px" boxShadow="0 1px 2px 0 rgba(60,64,67,.1)" overflow="hidden">
+                    {/* Search Bar */}
+                    <Box p={4} borderBottom="1px solid #e8eaed">
+                        <InputGroup maxW="400px">
+                            <InputLeftElement>
+                                <FaSearch color="#5f6368" />
+                            </InputLeftElement>
+                            <Input
+                                placeholder="Cari nama, NIK, atau instansi..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                border="1px solid #dadce0"
+                                borderRadius="8px"
+                                _focus={{ borderColor: "#1a73e8", boxShadow: "none" }}
+                            />
+                        </InputGroup>
+                    </Box>
 
-                        <Box overflowX="auto">
-                            <Table variant="simple" size="md">
-                                <Thead bg="gray.50">
+                    {/* Table */}
+                    <Box overflowX="auto">
+                        <Table>
+                            <Thead bg="#f8f9fa">
+                                <Tr>
+                                    <Th color="#5f6368" fontSize="xs" fontWeight="500">FOTO</Th>
+                                    <Th color="#5f6368" fontSize="xs" fontWeight="500">NAMA & NIK</Th>
+                                    <Th color="#5f6368" fontSize="xs" fontWeight="500">INSTANSI</Th>
+                                    <Th color="#5f6368" fontSize="xs" fontWeight="500">MASUK</Th>
+                                    <Th color="#5f6368" fontSize="xs" fontWeight="500">KELUAR</Th>
+                                    <Th color="#5f6368" fontSize="xs" fontWeight="500">STATUS</Th>
+                                </Tr>
+                            </Thead>
+                            <Tbody>
+                                {loading ? (
                                     <Tr>
-                                        <Th>Foto</Th>
-                                        <Th>Nama & NIK</Th>
-                                        <Th>Instansi</Th>
-                                        <Th>Waktu Masuk</Th>
-                                        <Th>Waktu Keluar</Th>
-                                        <Th>Status</Th>
+                                        <Td colSpan={6} py={10}>
+                                            <Center><Spinner size="lg" color="#1a73e8" /></Center>
+                                        </Td>
                                     </Tr>
-                                </Thead>
-                                <Tbody>
-                                    {loading ? (
-                                        <Tr>
-                                            <Td colSpan={6} py={10}>
-                                                <Center><Spinner size="xl" color="blue.500" /></Center>
+                                ) : filteredLogs.length === 0 ? (
+                                    <Tr>
+                                        <Td colSpan={6} textAlign="center" py={10} color="#5f6368">
+                                            Belum ada data kunjungan.
+                                        </Td>
+                                    </Tr>
+                                ) : (
+                                    filteredLogs.map((log) => (
+                                        <Tr key={log.id} _hover={{ bg: "#f8f9fa" }}>
+                                            <Td>
+                                                <Image
+                                                    src={log.photo_url ? `http://127.0.0.1:8000${log.photo_url}` : "https://via.placeholder.com/40"}
+                                                    boxSize="40px"
+                                                    borderRadius="full"
+                                                    objectFit="cover"
+                                                />
+                                            </Td>
+                                            <Td>
+                                                <Text fontWeight="500" color="#202124">{log.full_name}</Text>
+                                                <Text fontSize="xs" color="#5f6368">{log.nik}</Text>
+                                            </Td>
+                                            <Td color="#202124">{log.institution}</Td>
+                                            <Td color="#202124" fontSize="sm">{formatTime(log.check_in_time)}</Td>
+                                            <Td color="#5f6368" fontSize="sm">{formatTime(log.check_out_time)}</Td>
+                                            <Td>
+                                                <Badge
+                                                    bg={log.status === "Sedang Berkunjung" ? "#e6f4ea" : "#f1f3f4"}
+                                                    color={log.status === "Sedang Berkunjung" ? "#137333" : "#5f6368"}
+                                                    px={3}
+                                                    py={1}
+                                                    borderRadius="full"
+                                                    fontSize="xs"
+                                                    fontWeight="500"
+                                                >
+                                                    {log.status}
+                                                </Badge>
                                             </Td>
                                         </Tr>
-                                    ) : filteredLogs.length === 0 ? (
-                                        <Tr>
-                                            <Td colSpan={6} textAlign="center" py={10} color="gray.500">
-                                                Belum ada data kunjungan.
-                                            </Td>
-                                        </Tr>
-                                    ) : (
-                                        filteredLogs.map((log) => (
-                                            <Tr key={log.id} _hover={{ bg: "blue.50" }}>
-                                                <Td>
-                                                    <Image
-                                                        src={log.photo_url ? `http://127.0.0.1:8000${log.photo_url}` : "https://via.placeholder.com/40"}
-                                                        boxSize="40px"
-                                                        borderRadius="full"
-                                                        objectFit="cover"
-                                                        border="2px solid white"
-                                                        boxShadow="sm"
-                                                    />
-                                                </Td>
-                                                <Td>
-                                                    <Text fontWeight="bold" color="gray.700">{log.full_name}</Text>
-                                                    <Badge fontSize="0.7em" colorScheme="gray">{log.nik}</Badge>
-                                                </Td>
-                                                <Td>{log.institution}</Td>
-                                                <Td fontWeight="medium">{formatTime(log.check_in_time)}</Td>
-                                                <Td color="gray.500">{formatTime(log.check_out_time)}</Td>
-                                                <Td>
-                                                    <Badge
-                                                        colorScheme={log.status === "Sedang Berkunjung" ? "green" : "gray"}
-                                                        variant="subtle"
-                                                        px={3} py={1}
-                                                        borderRadius="full"
-                                                    >
-                                                        {log.status}
-                                                    </Badge>
-                                                </Td>
-                                            </Tr>
-                                        ))
-                                    )}
-                                </Tbody>
-                            </Table>
-                        </Box>
-                    </CardBody>
-                </Card>
-
+                                    ))
+                                )}
+                            </Tbody>
+                        </Table>
+                    </Box>
+                </Box>
             </Container>
         </Box>
     );

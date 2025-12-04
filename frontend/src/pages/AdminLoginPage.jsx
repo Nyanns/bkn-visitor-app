@@ -1,11 +1,14 @@
+// File: frontend/src/pages/AdminLoginPage.jsx
+// Google Material Design Style
 import { useState } from 'react';
 import {
-    Box, Button, Container, FormControl, FormLabel, Input,
-    Heading, VStack, Card, CardBody, useToast, InputGroup, InputLeftElement
+    Box, Button, Container, FormControl, Input,
+    Heading, VStack, Text, useToast, InputGroup, InputLeftElement,
+    Flex, Image
 } from '@chakra-ui/react';
-import { FaUserShield, FaLock } from 'react-icons/fa';
+import { FaUser, FaLock } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // Pakai axios langsung untuk login awal
+import axios from 'axios';
 
 function AdminLoginPage() {
     const [username, setUsername] = useState('');
@@ -17,18 +20,15 @@ function AdminLoginPage() {
     const handleLogin = async () => {
         setLoading(true);
         try {
-            // Format data harus x-www-form-urlencoded untuk OAuth2
             const formData = new FormData();
             formData.append('username', username);
             formData.append('password', password);
 
             const response = await axios.post('http://127.0.0.1:8000/token', formData);
-
-            // Simpan Token Kunci
             localStorage.setItem('adminToken', response.data.access_token);
 
             toast({ title: "Login Berhasil", status: "success", position: "top" });
-            navigate('/admin/dashboard'); // Masuk ke dashboard
+            navigate('/admin/dashboard');
 
         } catch (error) {
             toast({
@@ -42,43 +42,125 @@ function AdminLoginPage() {
     };
 
     return (
-        <Box bg="gray.800" minH="100vh" py={20}>
-            <Container maxW="sm">
-                <VStack spacing={8}>
-                    <Heading color="white">Admin Portal</Heading>
-                    <Card w="full" bg="gray.700" color="white">
-                        <CardBody p={8}>
-                            <VStack spacing={4}>
-                                <FormControl>
-                                    <FormLabel>Username</FormLabel>
-                                    <InputGroup>
-                                        <InputLeftElement><FaUserShield color="gray" /></InputLeftElement>
-                                        <Input
-                                            value={username} onChange={(e) => setUsername(e.target.value)}
-                                            placeholder="admin" bg="gray.600" border="none"
-                                        />
-                                    </InputGroup>
-                                </FormControl>
-                                <FormControl>
-                                    <FormLabel>Password</FormLabel>
-                                    <InputGroup>
-                                        <InputLeftElement><FaLock color="gray" /></InputLeftElement>
-                                        <Input
-                                            type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                                            placeholder="••••••" bg="gray.600" border="none"
-                                            onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-                                        />
-                                    </InputGroup>
-                                </FormControl>
-                                <Button colorScheme="blue" w="full" onClick={handleLogin} isLoading={loading}>
-                                    Masuk
-                                </Button>
-                            </VStack>
-                        </CardBody>
-                    </Card>
+        <Flex
+            minH="100vh"
+            align="center"
+            justify="center"
+            bg="#f8f9fa"
+        >
+            <Box
+                bg="white"
+                p={10}
+                borderRadius="8px"
+                boxShadow="0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15)"
+                w="400px"
+                maxW="90vw"
+            >
+                <VStack spacing={6}>
+                    {/* Logo/Icon */}
+                    <Flex
+                        w="72px"
+                        h="72px"
+                        bg="#1a73e8"
+                        borderRadius="full"
+                        align="center"
+                        justify="center"
+                    >
+                        <FaUser color="white" size="28px" />
+                    </Flex>
+
+                    {/* Title */}
+                    <VStack spacing={1}>
+                        <Heading
+                            size="lg"
+                            color="#202124"
+                            fontWeight="400"
+                            fontFamily="'Google Sans', 'Inter', sans-serif"
+                        >
+                            Sign in
+                        </Heading>
+                        <Text color="#5f6368" fontSize="sm">
+                            Admin Portal - BKN Visitor System
+                        </Text>
+                    </VStack>
+
+                    {/* Form */}
+                    <VStack spacing={4} w="full">
+                        <FormControl>
+                            <InputGroup>
+                                <InputLeftElement h="48px">
+                                    <FaUser color="#5f6368" />
+                                </InputLeftElement>
+                                <Input
+                                    h="48px"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    placeholder="Username"
+                                    border="1px solid #dadce0"
+                                    borderRadius="4px"
+                                    _hover={{ borderColor: "#202124" }}
+                                    _focus={{ borderColor: "#1a73e8", borderWidth: "2px", boxShadow: "none" }}
+                                    fontSize="16px"
+                                />
+                            </InputGroup>
+                        </FormControl>
+
+                        <FormControl>
+                            <InputGroup>
+                                <InputLeftElement h="48px">
+                                    <FaLock color="#5f6368" />
+                                </InputLeftElement>
+                                <Input
+                                    h="48px"
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Password"
+                                    border="1px solid #dadce0"
+                                    borderRadius="4px"
+                                    _hover={{ borderColor: "#202124" }}
+                                    _focus={{ borderColor: "#1a73e8", borderWidth: "2px", boxShadow: "none" }}
+                                    fontSize="16px"
+                                    onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                                />
+                            </InputGroup>
+                        </FormControl>
+
+                        <Text
+                            color="#1a73e8"
+                            fontSize="14px"
+                            alignSelf="flex-start"
+                            cursor="pointer"
+                            _hover={{ textDecoration: "underline" }}
+                        >
+                            Forgot password?
+                        </Text>
+                    </VStack>
+
+                    {/* Button */}
+                    <Button
+                        w="full"
+                        h="48px"
+                        bg="#1a73e8"
+                        color="white"
+                        borderRadius="4px"
+                        fontSize="15px"
+                        fontWeight="500"
+                        _hover={{ bg: "#1557b0" }}
+                        _active={{ bg: "#174ea6" }}
+                        onClick={handleLogin}
+                        isLoading={loading}
+                    >
+                        Sign in
+                    </Button>
+
+                    {/* Footer */}
+                    <Text color="#5f6368" fontSize="12px" pt={4}>
+                        © 2025 BKN - Direktorat INTIKAMI
+                    </Text>
                 </VStack>
-            </Container>
-        </Box>
+            </Box>
+        </Flex>
     );
 }
 
