@@ -1,96 +1,135 @@
+// File: frontend/src/pages/LoginPage.jsx
+// Google Material Design Style - Visitor Check-in
 import {
-    VStack, FormControl, FormLabel, Input, Button, Card, CardBody,
-    InputGroup, InputLeftElement, Text
+    VStack, FormControl, Input, Button, Text, Box, Flex, Heading,
+    InputGroup, InputLeftElement
 } from '@chakra-ui/react';
-import { FaUser, FaSearch } from 'react-icons/fa';
-import Header from '../components/Header';
+import { FaIdCard, FaArrowRight } from 'react-icons/fa';
 
 function LoginPage({ nik, setNik, handleLogin, loading }) {
 
-    // Fungsi Helper: Hanya izinkan angka
     const handleNikChange = (e) => {
         const value = e.target.value;
-        // Regex: Hanya boleh angka (0-9)
         if (/^\d*$/.test(value)) {
             setNik(value);
         }
     };
 
     return (
-        <VStack spacing={8} w="full" maxW="md" px={4}>
-            <Header />
-
-            <Card w="full" boxShadow="2xl" borderRadius="3xl" bg="white" overflow="hidden">
-                <CardBody p={10}>
-                    <VStack spacing={6}>
-
-                        <FormControl>
-                            <FormLabel
-                                fontWeight="bold"
-                                color="blue.900"
-                                fontSize="xs"
-                                textTransform="uppercase"
-                                letterSpacing="wider"
-                                textAlign="center"
-                                mb={4}
-                            >
-                                Identitas Pengunjung
-                            </FormLabel>
-
-                            <InputGroup size="lg">
-                                <InputLeftElement pointerEvents="none" h="full" pl={2}>
-                                    <FaUser color="#A0AEC0" />
-                                </InputLeftElement>
-
-                                {/* PERBAIKAN DI SINI */}
-                                <Input
-                                    type="text"                  // Ganti number jadi text
-                                    inputMode="numeric"          // Tetap muncul angka di keyboard HP
-                                    placeholder="Masukkan NIK / NIP..."
-                                    value={nik}
-                                    onChange={handleNikChange}   // Pakai fungsi filter angka
-                                    onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-                                    focusBorderColor="blue.500"
-                                    borderRadius="xl"
-                                    variant="filled"
-                                    bg="gray.50"
-                                    _hover={{ bg: "gray.100" }}
-                                    h="14"
-                                    fontSize="lg"
-                                    pl={12}
-                                    maxLength={20} // Batasi panjang NIK agar tidak kepanjangan
-                                />
-                            </InputGroup>
-                        </FormControl>
-
-                        <Button
-                            colorScheme="blue"
-                            size="lg"
-                            w="full"
-                            h="14"
-                            borderRadius="xl"
-                            fontSize="md"
-                            fontWeight="bold"
-                            boxShadow="lg"
-                            onClick={handleLogin}
-                            isLoading={loading}
-                            loadingText="Mencari..."
-                            leftIcon={<FaSearch />}
-                            _hover={{ transform: 'translateY(-2px)', boxShadow: 'xl' }}
-                            transition="all 0.2s"
+        <Flex
+            minH="100vh"
+            align="center"
+            justify="center"
+            bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+            p={4}
+        >
+            <Box
+                bg="white"
+                borderRadius="16px"
+                boxShadow="0 25px 50px -12px rgba(0, 0, 0, 0.25)"
+                p={10}
+                w="420px"
+                maxW="95vw"
+            >
+                <VStack spacing={8}>
+                    {/* Header */}
+                    <VStack spacing={2}>
+                        <Flex
+                            w="80px"
+                            h="80px"
+                            bg="#1a73e8"
+                            borderRadius="20px"
+                            align="center"
+                            justify="center"
+                            mb={2}
                         >
-                            Cek Data Saya
-                        </Button>
-
+                            <FaIdCard color="white" size="36px" />
+                        </Flex>
+                        <Heading
+                            size="lg"
+                            color="#202124"
+                            fontFamily="'Google Sans', 'Inter', sans-serif"
+                            fontWeight="500"
+                        >
+                            Selamat Datang
+                        </Heading>
+                        <Text color="#5f6368" fontSize="sm" textAlign="center">
+                            Direktorat Infrastruktur TI & Keamanan Informasi
+                        </Text>
+                        <Text color="#5f6368" fontSize="xs">
+                            Badan Kepegawaian Negara
+                        </Text>
                     </VStack>
-                </CardBody>
-            </Card>
 
-            <Text fontSize="xs" color="gray.400" textAlign="center" mt={2}>
-                Sistem Buku Tamu Digital INTIKAMI © 2025
-            </Text>
+                    {/* Form */}
+                    <FormControl>
+                        <Text
+                            fontSize="xs"
+                            color="#5f6368"
+                            mb={2}
+                            fontWeight="500"
+                            textTransform="uppercase"
+                            letterSpacing="0.5px"
+                        >
+                            Masukkan NIK / NIP Anda
+                        </Text>
+                        <InputGroup size="lg">
+                            <InputLeftElement h="56px" pl={2}>
+                                <FaIdCard color="#5f6368" />
+                            </InputLeftElement>
+                            <Input
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="Contoh: 3201234567890001"
+                                value={nik}
+                                onChange={handleNikChange}
+                                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                                h="56px"
+                                pl={12}
+                                fontSize="lg"
+                                border="2px solid #dadce0"
+                                borderRadius="12px"
+                                _hover={{ borderColor: "#1a73e8" }}
+                                _focus={{
+                                    borderColor: "#1a73e8",
+                                    boxShadow: "0 0 0 3px rgba(26,115,232,0.1)"
+                                }}
+                                maxLength={20}
+                            />
+                        </InputGroup>
+                    </FormControl>
 
-        </VStack>
+                    {/* Button */}
+                    <Button
+                        w="full"
+                        h="56px"
+                        bg="#1a73e8"
+                        color="white"
+                        borderRadius="12px"
+                        fontSize="16px"
+                        fontWeight="600"
+                        rightIcon={<FaArrowRight />}
+                        _hover={{
+                            bg: "#1557b0",
+                            transform: "translateY(-2px)",
+                            boxShadow: "0 10px 20px rgba(26,115,232,0.3)"
+                        }}
+                        _active={{ bg: "#174ea6", transform: "translateY(0)" }}
+                        transition="all 0.2s"
+                        onClick={handleLogin}
+                        isLoading={loading}
+                        loadingText="Mencari..."
+                    >
+                        Cek Data Saya
+                    </Button>
+
+                    {/* Footer */}
+                    <Text color="#9aa0a6" fontSize="11px" textAlign="center">
+                        Sistem Buku Tamu Digital INTIKAMI © 2025
+                    </Text>
+                </VStack>
+            </Box>
+        </Flex>
     );
 }
 
