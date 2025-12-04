@@ -6,7 +6,7 @@ import {
     InputLeftElement, Card, CardBody, useToast, Spinner, Center,
     IconButton
 } from '@chakra-ui/react';
-import { FaSearch, FaSync, FaUserPlus, FaSignOutAlt } from 'react-icons/fa';
+import { FaSearch, FaSync, FaUserPlus, FaSignOutAlt, FaFileExcel } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
@@ -24,7 +24,6 @@ function AdminDashboard() {
             setLogs(response.data);
         } catch (error) {
             toast({ title: "Gagal memuat data", status: "error", position: "top" });
-            // Jika token expired, otomatis logout
             if (error.response && error.response.status === 401) {
                 handleLogout();
             }
@@ -41,6 +40,24 @@ function AdminDashboard() {
         localStorage.removeItem('adminToken');
         toast({ title: "Logout Berhasil", status: "info", position: "top" });
         navigate('/admin/login');
+    };
+
+    const handleExportExcel = async () => {
+        try {
+            const response = await api.get('/admin/export-excel', {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Laporan_Tamu_${new Date().toISOString().split('T')[0]}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            toast({ title: "Excel berhasil diexport!", status: "success", position: "top" });
+        } catch (error) {
+            toast({ title: "Gagal export Excel", status: "error", position: "top" });
+        }
     };
 
     const formatTime = (isoString) => {
@@ -71,6 +88,16 @@ function AdminDashboard() {
                     </Box>
 
                     <HStack spacing={3}>
+                        {/* Tombol Export Excel */}
+                        <Button
+                            leftIcon={<FaFileExcel />}
+                            colorScheme="green"
+                            variant="outline"
+                            onClick={handleExportExcel}
+                        >
+                            Export Excel
+                        </Button>
+
                         {/* Tombol Registrasi */}
                         <Button
                             leftIcon={<FaUserPlus />}
@@ -96,7 +123,7 @@ function AdminDashboard() {
                             onClick={handleLogout}
                         >
                             Logout
-                        </Button>
+                        </Button}
                     </HStack>
                 </HStack>
 

@@ -58,5 +58,27 @@ Berikut adalah perubahan penting yang telah dilakukan untuk meningkatkan keamana
    ```
 
 ## Catatan Penting
-- Jangan lupa untuk **menghapus** atau mengubah `ALLOW_SETUP_ADMIN=false` di `.env` setelah Anda berhasil membuat akun admin pertama kali.
 - Pastikan file `.env` tidak ikut ter-upload ke repository publik (sudah di-ignore di `.gitignore`).
+
+### 3. Fitur Tambahan (Baru)
+
+#### a. Logging System
+Aplikasi sekarang mencatat aktivitas penting di folder `backend/logs/app.log`.
+- **Loguru** digunakan untuk pencatatan log yang lebih rapi.
+- Log mencakup: Login sukses/gagal, Check-in/out, Upload file, dan Error.
+- Log akan di-rotasi otomatis setiap 500MB atau 7 hari.
+
+#### b. Database Backup
+Script backup otomatis tersedia di `backend/backup_database.py`.
+- Menjalankan backup:
+  ```bash
+  python backup_database.py
+  ```
+- File backup disimpan di `backend/backups/` dengan timestamp.
+- Script otomatis menghapus backup yang lebih lama dari 7 hari.
+- **Rekomendasi:** Setup cron job / Task Scheduler untuk menjalankan script ini setiap malam.
+
+#### c. Export to Excel
+Admin dapat mendownload laporan kunjungan dalam format Excel.
+- Akses via Dashboard Admin -> Klik tombol **"Export Excel"**.
+- File berisi: NIK, Nama, Instansi, Waktu Masuk, Waktu Keluar, dan Status.

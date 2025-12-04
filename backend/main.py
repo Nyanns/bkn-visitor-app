@@ -1,4 +1,4 @@
-# FILE: backend/main.py (SECURE WITH JWT)
+# FILE: backend/main.py (SECURE WITH JWT + LOGGING)
 import shutil
 import os
 import uuid
@@ -10,6 +10,7 @@ from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Form, sta
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import bcrypt
@@ -19,8 +20,21 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import magic
+from loguru import logger
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
 
-# Load Environment Variables FIRST
+# Setup Logging
+os.makedirs("logs", exist_ok=True)
+logger.add(
+    "logs/app.log",
+    rotation="500 MB",
+    retention="7 days",
+    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+    level="INFO"
+)
+
+# Load Environment Variables
 load_dotenv()
 
 # Import file lokal
@@ -33,13 +47,13 @@ models.Base.metadata.create_all(bind=engine)
 # --- 1. KONFIGURASI KEAMANAN (JWT) ---
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
-    SECRET_KEY = "DEFAULT_DEV_SECRET_CHANGE_ME" # Fallback for dev
-    print("WARNING: SECRET_KEY not found in .env, using default!")
+    SECRET_KEY = "DEFAULT_DEV_SECRET_CHANGE_ME"
+    logger.warning("SECRET_KEY not found in .env, using default!")
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 # Login berlaku 1 jam
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token") # URL untuk login
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # --- 2. KONFIGURASI UTAMA ---
 JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
@@ -123,33 +137,38 @@ def validate_nik(nik: str):
     return nik
 
 def validate_and_save_file(upload_file: UploadFile) -> str:
-    if not upload_file: raise HTTPException(status_code=400, detail="File wajib!")
+    if not upload_file: 
+        raise HTTPException(status_code=400, detail="File wajib!")
     
-    # 1. Validasi Ekstensi (Basic)
     file_ext = os.path.splitext(upload_file.filename)[1].lower()
     ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".pdf"}
     if file_ext not in ALLOWED_EXTENSIONS:
+        logger.error(f"File upload rejected: invalid extension {file_ext}")
         raise HTTPException(status_code=400, detail=f"Ekstensi file tidak diizinkan: {file_ext}")
 
-    # 2. Validasi Konten (Magic Bytes) - Anti-Spoofing
     try:
         header = upload_file.file.read(2048)
-        upload_file.file.seek(0) # Reset pointer
+        upload_file.file.seek(0)
         mime_type = magic.from_buffer(header, mime=True)
         
         ALLOWED_MIMES = {"image/jpeg", "image/png", "application/pdf"}
         if mime_type not in ALLOWED_MIMES:
-             raise HTTPException(status_code=400, detail=f"Tipe file tidak valid (terdeteksi: {mime_type})")
+            logger.error(f"File upload rejected: invalid MIME type {mime_type}")
+            raise HTTPException(status_code=400, detail=f"Tipe file tidak valid (terdeteksi: {mime_type})")
              
     except Exception as e:
-        print(f"Error validating file: {e}")
+        logger.error(f"Error validating file: {e}")
         raise HTTPException(status_code=400, detail="Gagal memvalidasi file.")
 
     unique_name = f"{uuid.uuid4()}{file_ext}"
     file_path = os.path.join(UPLOAD_DIR, unique_name)
     try:
-        with open(file_path, "wb") as buffer: shutil.copyfileobj(upload_file.file, buffer)
-    except: raise HTTPException(500, "Gagal simpan file")
+        with open(file_path, "wb") as buffer: 
+            shutil.copyfileobj(upload_file.file, buffer)
+        logger.info(f"File uploaded successfully: {unique_name}")
+    except Exception as e:
+        logger.error(f"Failed to save file: {e}")
+        raise HTTPException(500, "Gagal simpan file")
     return file_path
 
 
@@ -159,28 +178,29 @@ def validate_and_save_file(upload_file: UploadFile) -> str:
 def read_root():
     return {"status": "online", "system": "BKN Visitor App v1.0 Secure"}
 
-# === LOGIN ADMIN (Baru) ===
+# === LOGIN ADMIN ===
 @app.post("/token", response_model=Token)
 @limiter.limit("5/minute")
 def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    # Cari admin di database
+    client_ip = request.client.host
     admin = db.query(models.Admin).filter(models.Admin.username == form_data.username).first()
+    
     if not admin or not verify_password(form_data.password, admin.password_hash):
+        logger.warning(f"Failed login attempt for user '{form_data.username}' from {client_ip}")
         raise HTTPException(status_code=400, detail="Username atau Password Salah")
     
-    # Buat token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": admin.username}, expires_delta=access_token_expires)
+    logger.info(f"Successful login: {admin.username} from {client_ip}")
     return {"access_token": access_token, "token_type": "bearer"}
 
-# === BUAT ADMIN PERTAMA KALI (Hanya bisa sekali jalan via docs, atau matikan nanti) ===
+# === SETUP ADMIN ===
 @app.post("/setup-admin")
 def create_initial_admin(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
-    # Cek apakah fitur setup diizinkan via Environment Variable
     if os.getenv("ALLOW_SETUP_ADMIN") != "true":
-        raise HTTPException(status_code=403, detail="Fitur setup admin dinonaktifkan. Set ALLOW_SETUP_ADMIN=true di .env untuk mengaktifkan.")
+        logger.warning("Attempt to access /setup-admin with feature disabled")
+        raise HTTPException(status_code=403, detail="Fitur setup admin dinonaktifkan.")
 
-    #Cek apakah admin sudah ada (di luar try-except agar error 400 tidak tertangkap sebagai 500)
     if db.query(models.Admin).first():
         raise HTTPException(status_code=400, detail="Admin sudah ada. Gunakan login.")
 
@@ -189,20 +209,71 @@ def create_initial_admin(username: str = Form(...), password: str = Form(...), d
         new_admin = models.Admin(username=username, password_hash=hashed_password)
         db.add(new_admin)
         db.commit()
+        logger.info(f"New admin created: {username}")
         return {"status": "success", "message": f"Admin {username} berhasil dibuat"}
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print(f"ERROR CREATING ADMIN: {e}")
+        logger.error(f"Error creating admin: {e}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {e}")
 
+# === EXPORT TO EXCEL ===
+@app.get("/admin/export-excel", tags=["Admin"])
+def export_to_excel(current_admin: models.Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    try:
+        results = db.query(models.VisitLog, models.Visitor)\
+            .join(models.Visitor, models.VisitLog.visitor_nik == models.Visitor.nik)\
+            .order_by(models.VisitLog.check_in_time.desc()).all()
+        
+        # Create workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Data Tamu"
+        
+        # Header styling
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF")
+        
+        # Headers
+        headers = ["No", "NIK", "Nama Lengkap", "Instansi", "Check-in", "Check-out", "Status"]
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num, value=header)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center")
+        
+        # Data rows
+        for idx, (log, visitor) in enumerate(results, 2):
+            ws.cell(row=idx, column=1, value=idx-1)
+            ws.cell(row=idx, column=2, value=visitor.nik)
+            ws.cell(row=idx, column=3, value=visitor.full_name)
+            ws.cell(row=idx, column=4, value=visitor.institution)
+            ws.cell(row=idx, column=5, value=log.check_in_time.strftime("%Y-%m-%d %H:%M") if log.check_in_time else "-")
+            ws.cell(row=idx, column=6, value=log.check_out_time.strftime("%Y-%m-%d %H:%M") if log.check_out_time else "-")
+            ws.cell(row=idx, column=7, value="Sedang Berkunjung" if not log.check_out_time else "Selesai")
+        
+        # Adjust column widths
+        ws.column_dimensions['A'].width = 5
+        ws.column_dimensions['B'].width = 18
+        ws.column_dimensions['C'].width = 25
+        ws.column_dimensions['D'].width = 30
+        ws.column_dimensions['E'].width = 18
+        ws.column_dimensions['F'].width = 18
+        ws.column_dimensions['G'].width = 18
+        
+        # Save file
+        filename = f"Laporan_Tamu_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
+        filepath = f"backups/{filename}"
+        wb.save(filepath)
+        
+        logger.info(f"Excel exported by {current_admin.username}: {filename}")
+        return FileResponse(filepath, filename=filename, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    
+    except Exception as e:
+        logger.error(f"Error exporting Excel: {e}")
+        raise HTTPException(status_code=500, detail="Gagal export Excel")
 
-# === API YANG DILINDUNGI (Ada Gemboknya) ===
-
-# Tambahkan `Depends(get_current_admin)` untuk mengunci endpoint ini
+# === PROTECTED ENDPOINTS ===
 @app.get("/admin/logs", tags=["Admin"])
 def get_admin_logs(current_admin: models.Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
-    # (Isi sama seperti sebelumnya, cuma nambah parameter current_admin)
     results = db.query(models.VisitLog, models.Visitor)\
         .join(models.Visitor, models.VisitLog.visitor_nik == models.Visitor.nik)\
         .order_by(models.VisitLog.check_in_time.desc()).all()
@@ -220,15 +291,12 @@ def get_admin_logs(current_admin: models.Admin = Depends(get_current_admin), db:
 
 @app.post("/visitors/", status_code=status.HTTP_201_CREATED, tags=["Admin"])
 def create_visitor(
-    # ... Parameter Form sama ...
     nik: str = Form(..., min_length=3, max_length=20),
     full_name: str = Form(...), institution: str = Form(...), phone: str = Form(None),
     photo: UploadFile = File(...), ktp: UploadFile = File(None), task_letter: UploadFile = File(None),
-    # ... Dependency Kunci ...
-    current_admin: models.Admin = Depends(get_current_admin), # <--- KUNCI PENGAMAN
+    current_admin: models.Admin = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    # (Isi logika sama persis seperti main.py sebelumnya)
     validate_nik(nik)
     if db.query(models.Visitor).filter(models.Visitor.nik == nik).first():
         raise HTTPException(400, f"NIK {nik} sudah terdaftar!")
@@ -243,12 +311,12 @@ def create_visitor(
     )
     db.add(new_visitor)
     db.commit()
+    logger.info(f"New visitor registered: {full_name} (NIK: {nik}) by {current_admin.username}")
     return StandardResponse(status="success", message="Registrasi Tamu Berhasil")
 
-# === API PUBLIK (Bebas Akses untuk Kiosk) ===
+# === PUBLIC ENDPOINTS ===
 @app.get("/visitors/{nik}", tags=["Visitor"])
 def get_visitor(nik: str, db: Session = Depends(get_db)):
-    # (Kode sama, tidak perlu digembok karena untuk User)
     visitor = db.query(models.Visitor).filter(models.Visitor.nik == nik).first()
     if not visitor: raise HTTPException(404, "Data tidak ditemukan")
     now_jkt = datetime.now(JAKARTA_TZ)
@@ -261,7 +329,6 @@ def get_visitor(nik: str, db: Session = Depends(get_db)):
 
 @app.post("/check-in/", tags=["Attendance"])
 def check_in(nik: str = Form(...), db: Session = Depends(get_db)):
-    # (Kode sama, ini API publik)
     validate_nik(nik)
     visitor = db.query(models.Visitor).filter(models.Visitor.nik == nik).first()
     if not visitor: raise HTTPException(404, "NIK tidak ditemukan.")
@@ -270,21 +337,26 @@ def check_in(nik: str = Form(...), db: Session = Depends(get_db)):
         models.VisitLog.visitor_nik == nik, models.VisitLog.visit_date == now_jkt.date(),
         models.VisitLog.check_out_time == None
     ).first()
-    if active_visit: return CheckInOutResponse(status="info", message="Sudah masuk.", time=str(now_jkt))
+    if active_visit: 
+        return CheckInOutResponse(status="info", message="Sudah masuk.", time=str(now_jkt))
     
     new_log = models.VisitLog(visitor_nik=nik, check_in_time=now_jkt.replace(tzinfo=None), visit_date=now_jkt.date())
-    db.add(new_log); db.commit()
+    db.add(new_log)
+    db.commit()
+    logger.info(f"Check-in: {visitor.full_name} (NIK: {nik})")
     return CheckInOutResponse(status="success", message=f"Selamat Datang {visitor.full_name}!", time=now_jkt.strftime("%H:%M:%S"))
 
 @app.post("/check-out/", tags=["Attendance"])
 def check_out(nik: str = Form(...), db: Session = Depends(get_db)):
-    # (Kode sama, API publik)
     now_jkt = datetime.now(JAKARTA_TZ)
     active_visit = db.query(models.VisitLog).filter(
         models.VisitLog.visitor_nik == nik, models.VisitLog.visit_date == now_jkt.date(),
         models.VisitLog.check_out_time == None
     ).first()
     if not active_visit: raise HTTPException(400, "Belum Check-In.")
+    
+    visitor = db.query(models.Visitor).filter(models.Visitor.nik == nik).first()
     active_visit.check_out_time = now_jkt.replace(tzinfo=None)
     db.commit()
+    logger.info(f"Check-out: {visitor.full_name if visitor else 'Unknown'} (NIK: {nik})")
     return CheckInOutResponse(status="success", message="Hati-hati di jalan!", time=now_jkt.strftime("%H:%M:%S"))
