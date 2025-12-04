@@ -18,20 +18,6 @@ from jose import JWTError, jwt
 # Import file lokal
 from database import engine, get_db
 import models
-
-# Inisialisasi Database
-models.Base.metadata.create_all(bind=engine)
-
-app = FastAPI(title="BKN Visitor System", version="2.1.0 (Secure Auth)")
-
-# --- 1. KONFIGURASI KEAMANAN (JWT) ---
-SECRET_KEY = "RAHASIA_NEGARA_BKN_GANTI_INI_DENGAN_STRING_ACAK_PANJANG"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 # Login berlaku 1 jam
-
-# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token") # URL untuk login
-
 # --- 2. KONFIGURASI UTAMA ---
 JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
 MAX_FILE_SIZE = 2 * 1024 * 1024  
@@ -116,37 +102,9 @@ def validate_and_save_file(upload_file: UploadFile) -> str:
         with open(file_path, "wb") as buffer: shutil.copyfileobj(upload_file.file, buffer)
     except: raise HTTPException(500, "Gagal simpan file")
     return file_path
-
-
-# --- 7. API ENDPOINTS ---
-
-@app.get("/")
-def read_root():
-    return {"status": "online", "system": "BKN Visitor App v2.1 Secure"}
-
-# === LOGIN ADMIN (Baru) ===
-@app.post("/token", response_model=Token)
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    # Cari admin di database
-    admin = db.query(models.Admin).filter(models.Admin.username == form_data.username).first()
     if not admin or not verify_password(form_data.password, admin.password_hash):
         raise HTTPException(status_code=400, detail="Username atau Password Salah")
     
-    # Buat token
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": admin.username}, expires_delta=access_token_expires)
-    return {"access_token": access_token, "token_type": "bearer"}
-
-# === BUAT ADMIN PERTAMA KALI (Hanya bisa sekali jalan via docs, atau matikan nanti) ===
-@app.post("/setup-admin")
-def create_initial_admin(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
-    # Cek apakah admin sudah ada (di luar try-except agar error 400 tidak tertangkap sebagai 500)
-    if db.query(models.Admin).first():
-        raise HTTPException(status_code=400, detail="Admin sudah ada. Gunakan login.")
-
-    try:
-        hashed_password = get_password_hash(password)
-        new_admin = models.Admin(username=username, password_hash=hashed_password)
         db.add(new_admin)
         db.commit()
         return {"status": "success", "message": f"Admin {username} berhasil dibuat"}
