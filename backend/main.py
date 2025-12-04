@@ -6,7 +6,7 @@ import pytz
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Form, status
+from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Form, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -14,15 +14,45 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import bcrypt
 from jose import JWTError, jwt
+from dotenv import load_dotenv
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+import magic
+
+# Load Environment Variables FIRST
+load_dotenv()
 
 # Import file lokal
 from database import engine, get_db
 import models
+
+# Inisialisasi Database
+models.Base.metadata.create_all(bind=engine)
+
+# --- 1. KONFIGURASI KEAMANAN (JWT) ---
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    SECRET_KEY = "DEFAULT_DEV_SECRET_CHANGE_ME" # Fallback for dev
+    print("WARNING: SECRET_KEY not found in .env, using default!")
+
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 # Login berlaku 1 jam
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token") # URL untuk login
+
 # --- 2. KONFIGURASI UTAMA ---
 JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
 MAX_FILE_SIZE = 2 * 1024 * 1024  
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Setup Limiter
+limiter = Limiter(key_func=get_remote_address)
+app = FastAPI(title="BKN Visitor System", version="1.0")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # --- 3. CORS ---
@@ -93,18 +123,70 @@ def validate_nik(nik: str):
     return nik
 
 def validate_and_save_file(upload_file: UploadFile) -> str:
-    # (Kode validasi file sama seperti sebelumnya, dipersingkat di sini)
     if not upload_file: raise HTTPException(status_code=400, detail="File wajib!")
+    
+    # 1. Validasi Ekstensi (Basic)
     file_ext = os.path.splitext(upload_file.filename)[1].lower()
+    ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".pdf"}
+    if file_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"Ekstensi file tidak diizinkan: {file_ext}")
+
+    # 2. Validasi Konten (Magic Bytes) - Anti-Spoofing
+    try:
+        header = upload_file.file.read(2048)
+        upload_file.file.seek(0) # Reset pointer
+        mime_type = magic.from_buffer(header, mime=True)
+        
+        ALLOWED_MIMES = {"image/jpeg", "image/png", "application/pdf"}
+        if mime_type not in ALLOWED_MIMES:
+             raise HTTPException(status_code=400, detail=f"Tipe file tidak valid (terdeteksi: {mime_type})")
+             
+    except Exception as e:
+        print(f"Error validating file: {e}")
+        raise HTTPException(status_code=400, detail="Gagal memvalidasi file.")
+
     unique_name = f"{uuid.uuid4()}{file_ext}"
     file_path = os.path.join(UPLOAD_DIR, unique_name)
     try:
         with open(file_path, "wb") as buffer: shutil.copyfileobj(upload_file.file, buffer)
     except: raise HTTPException(500, "Gagal simpan file")
     return file_path
+
+
+# --- 7. API ENDPOINTS ---
+
+@app.get("/")
+def read_root():
+    return {"status": "online", "system": "BKN Visitor App v1.0 Secure"}
+
+# === LOGIN ADMIN (Baru) ===
+@app.post("/token", response_model=Token)
+@limiter.limit("5/minute")
+def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    # Cari admin di database
+    admin = db.query(models.Admin).filter(models.Admin.username == form_data.username).first()
     if not admin or not verify_password(form_data.password, admin.password_hash):
         raise HTTPException(status_code=400, detail="Username atau Password Salah")
     
+    # Buat token
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(data={"sub": admin.username}, expires_delta=access_token_expires)
+    return {"access_token": access_token, "token_type": "bearer"}
+
+# === BUAT ADMIN PERTAMA KALI (Hanya bisa sekali jalan via docs, atau matikan nanti) ===
+@app.post("/setup-admin")
+def create_initial_admin(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    # Cek apakah fitur setup diizinkan via Environment Variable
+    if os.getenv("ALLOW_SETUP_ADMIN") != "true":
+        raise HTTPException(status_code=403, detail="Fitur setup admin dinonaktifkan. Set ALLOW_SETUP_ADMIN=true di .env untuk mengaktifkan.")
+
+    #Cek apakah admin sudah ada (di luar try-except agar error 400 tidak tertangkap sebagai 500)
+    if db.query(models.Admin).first():
+        raise HTTPException(status_code=400, detail="Admin sudah ada. Gunakan login.")
+
+    try:
+        hashed_password = get_password_hash(password)
+        new_admin = models.Admin(username=username, password_hash=hashed_password)
         db.add(new_admin)
         db.commit()
         return {"status": "success", "message": f"Admin {username} berhasil dibuat"}

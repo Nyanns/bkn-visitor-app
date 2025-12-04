@@ -15,6 +15,8 @@ Berikut adalah perubahan penting yang telah dilakukan untuk meningkatkan keamana
       ```
       ALLOW_SETUP_ADMIN=true
       ```
+- **Rate Limiting (Brute-Force Protection):** Login endpoint (`/token`) dibatasi maksimal **5 percobaan per menit** untuk mencegah serangan brute-force.
+- **File Upload Validation:** Validasi file upload sekarang menggunakan **magic bytes** (bukan hanya ekstensi) untuk mencegah upload file berbahaya yang disamarkan.
 
 ## Cara Menjalankan Aplikasi
 
@@ -27,6 +29,10 @@ Berikut adalah perubahan penting yang telah dilakukan untuk meningkatkan keamana
    ```bash
    pip install -r requirements.txt
    ```
+   
+   **Dependencies Baru (Security Phase 2):**
+   - `slowapi` - Rate limiting untuk API endpoints
+   - `python-magic-bin` - Validasi file berdasarkan konten (magic bytes)
 3. Buat file `.env` (jika belum ada) dan isi konfigurasi:
    ```env
    SECRET_KEY=isi_dengan_string_acak_yang_panjang_dan_rahasia
