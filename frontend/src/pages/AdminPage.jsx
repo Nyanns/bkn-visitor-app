@@ -32,7 +32,7 @@ function AdminPage() {
 
     const handleSubmit = async () => {
         if (!formData.nik || !formData.full_name || !file) {
-            toast({ title: "NIK, Nama, dan Foto Wajib diisi!", status: "error", position: "top" });
+            toast({ title: "NIK, Nama, dan Foto Wajib diisi!", status: "error", position: "top", duration: 3000, isClosable: true });
             return;
         }
 
@@ -44,7 +44,7 @@ function AdminPage() {
 
             await api.post('/visitors/', dataToSend);
 
-            toast({ title: "Registrasi Berhasil!", status: "success", position: "top" });
+            toast({ title: "Registrasi Berhasil!", status: "success", position: "top", duration: 3000, isClosable: true });
 
             setFormData({ nik: '', full_name: '', institution: '', phone: '' });
             setFile(null);
@@ -55,7 +55,9 @@ function AdminPage() {
                 title: "Gagal",
                 description: error.response?.data?.detail || "Terjadi kesalahan",
                 status: "error",
-                position: "top"
+                position: "top",
+                duration: 3000,
+                isClosable: true
             });
         } finally {
             setLoading(false);

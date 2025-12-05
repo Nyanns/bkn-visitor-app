@@ -53,10 +53,22 @@ Berikut adalah perubahan penting yang telah dilakukan untuk meningkatkan keamana
    ```bash
    npm install
    ```
+   **Dependencies (Updated):**
+   - `react@^19.2.0`, `react-dom@^19.2.0` - React 19
+   - `@chakra-ui/react` - UI Component library
+   - `react-icons@^5.4.0` - Icon library (newly added)
+   - `framer-motion` - Animation library
+   - `axios` - HTTP client
+   - `react-router-dom` - Routing
 3. Jalankan development server:
    ```bash
    npm run dev
    ```
+4. Build untuk production:
+   ```bash
+   npm run build
+   ```
+   File hasil build akan ada di folder `frontend/dist/` dengan optimasi bundle size.
 
 ## Catatan Penting
 - Pastikan file `.env` tidak ikut ter-upload ke repository publik (sudah di-ignore di `.gitignore`).
@@ -83,3 +95,30 @@ Script backup otomatis tersedia di `backend/backup_database.py`.
 Admin dapat mendownload laporan kunjungan dalam format Excel.
 - Akses via Dashboard Admin -> Klik tombol **"Export Excel"**.
 - File berisi: NIK, Nama, Instansi, Waktu Masuk, Waktu Keluar, dan Status.
+
+### 4. Optimasi Performa Frontend (Bundle Size Optimization)
+
+Aplikasi frontend telah dioptimasi untuk loading yang lebih cepat dengan teknik code splitting dan vendor chunking.
+
+#### Improvements:
+- **Main bundle dikurangi 84%**: dari 583 kB menjadi 90 kB (31.92 kB gzipped)
+- **Code Splitting**: LoginPage dan DashboardPage dimuat secara lazy (on-demand)
+- **Vendor Chunking**: Library besar (Chakra UI, React, Icons) dipisah menjadi chunk terpisah untuk caching yang lebih baik
+- **8 chunk terpisah** menggantikan 1 bundle besar untuk loading paralel
+
+#### Technical Details:
+- Menggunakan `React.lazy()` dan `Suspense` untuk lazy loading komponen
+- Vite configured dengan `manualChunks` function untuk vendor splitting
+- Dependencies baru: `react-icons@^5.4.0` ditambahkan ke package.json
+
+#### Build Size Breakdown:
+| File | Size | Gzipped |
+|------|------|---------|
+| Main bundle | 90.51 kB | 31.92 kB |
+| React vendor | 178.30 kB | 56.33 kB |
+| Chakra UI | 295.34 kB | 96.75 kB |
+| React Icons | 12.68 kB | 4.19 kB |
+| LoginPage | 1.73 kB | 0.87 kB |
+| DashboardPage | 3.74 kB | 1.44 kB |
+
+**Total gzipped**: ~192 kB (lebih kecil dari sebelumnya 189 kB untuk bundle tunggal, dengan benefit caching dan parallel loading)

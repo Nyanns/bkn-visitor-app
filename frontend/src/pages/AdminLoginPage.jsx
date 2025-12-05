@@ -27,14 +27,16 @@ function AdminLoginPage() {
             const response = await axios.post('http://127.0.0.1:8000/token', formData);
             localStorage.setItem('adminToken', response.data.access_token);
 
-            toast({ title: "Login Berhasil", status: "success", position: "top" });
+            toast({ title: "Login Berhasil", status: "success", position: "top", duration: 3000, isClosable: true });
             navigate('/admin/dashboard');
 
         } catch (error) {
             toast({
                 title: "Login Gagal",
                 description: "Username atau Password salah",
-                status: "error", position: "top"
+                status: "error", position: "top",
+                duration: 3000,
+                isClosable: true
             });
         } finally {
             setLoading(false);
@@ -80,7 +82,7 @@ function AdminLoginPage() {
                             Sign in
                         </Heading>
                         <Text color="#5f6368" fontSize="sm">
-                            Admin Portal - BKN Visitor System
+                            Admin Portal - Data Center Visitor System
                         </Text>
                     </VStack>
 
@@ -125,16 +127,6 @@ function AdminLoginPage() {
                                 />
                             </InputGroup>
                         </FormControl>
-
-                        <Text
-                            color="#1a73e8"
-                            fontSize="14px"
-                            alignSelf="flex-start"
-                            cursor="pointer"
-                            _hover={{ textDecoration: "underline" }}
-                        >
-                            Forgot password?
-                        </Text>
                     </VStack>
 
                     {/* Button */}
