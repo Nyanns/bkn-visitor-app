@@ -2,3 +2,17 @@
 2025-12-04 14:41:29 | INFO | Excel exported by panda: Laporan_Tamu_2025-12-04.xlsx
 2025-12-04 14:45:16 | INFO | Successful login: panda from 127.0.0.1
 2025-12-04 14:45:57 | INFO | Excel exported by panda: Laporan_Tamu_2025-12-04.xlsx
+2025-12-04 15:16:29 | INFO | Successful login: panda from 127.0.0.1
+2025-12-04 15:42:42 | INFO | Successful login: panda from 127.0.0.1
+2025-12-04 15:43:10 | INFO | Successful login: panda from 127.0.0.1
+2025-12-04 15:47:31 | INFO | Check-in: Sandi  (NIK: 12345)
+2025-12-04 15:47:48 | INFO | Successful login: panda from 127.0.0.1
+2025-12-04 15:50:10 | INFO | Check-in: Zeta (NIK: 139201)
+2025-12-04 15:50:41 | INFO | Check-in: ijan (NIK: 88888)
+2025-12-04 15:50:53 | INFO | Check-in: Hatsune Miku (NIK: 99999)
+2025-12-04 15:51:02 | INFO | Check-out: Hatsune Miku (NIK: 99999)
+2025-12-04 16:02:14 | INFO | Successful login: panda from 127.0.0.1
+2025-12-04 16:02:38 | INFO | Check-out: ijan (NIK: 88888)
+2025-12-04 16:03:02 | INFO | Check-out: Zeta (NIK: 139201)
+2025-12-04 16:03:16 | INFO | Check-out: Sandi  (NIK: 12345)
+2025-12-04 20:11:09 | INFO | Successful login: panda from 127.0.0.1
