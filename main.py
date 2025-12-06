@@ -231,7 +231,7 @@ def cleanup_excel_file(filepath: str):
 
 # === EXPORT TO EXCEL ===
 @app.get("/admin/export-excel", tags=["Admin"])
-def export_to_excel(current_admin: models.Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+def export_to_excel(background_tasks: BackgroundTasks, current_admin: models.Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     try:
         results = db.query(models.VisitLog, models.Visitor)\
             .join(models.Visitor, models.VisitLog.visitor_nik == models.Visitor.nik)\
@@ -348,6 +348,35 @@ def get_visitor(nik: str, db: Session = Depends(get_db)):
     ).first()
     return {"nik": visitor.nik, "full_name": visitor.full_name, "institution": visitor.institution,
             "photo_path": visitor.photo_path, "is_checked_in": active_visit is not None}
+
+@app.get("/visitors/{nik}/photo", tags=["Visitor"])
+def get_visitor_photo(nik: str, db: Session = Depends(get_db)):
+    """
+    Public endpoint for visitors to access their own photo.
+    No admin authentication required - validates by NIK.
+    """
+    visitor = db.query(models.Visitor).filter(models.Visitor.nik == nik).first()
+    if not visitor:
+        raise HTTPException(status_code=404, detail="Visitor not found")
+    
+    if not visitor.photo_path:
+        raise HTTPException(status_code=404, detail="Photo not found")
+    
+    # Check if file exists
+    if not os.path.exists(visitor.photo_path):
+        logger.warning(f"Photo file missing for visitor {nik}: {visitor.photo_path}")
+        raise HTTPException(status_code=404, detail="Photo file not found")
+    
+    # Return photo with proper headers
+    return FileResponse(
+        visitor.photo_path,
+        media_type="image/jpeg",
+        headers={
+            "Cache-Control": "public, max-age=86400",  # Cache for 24 hours
+            "X-Content-Type-Options": "nosniff"
+        }
+    )
+
 
 @app.post("/check-in/", tags=["Attendance"])
 def check_in(nik: str = Form(...), db: Session = Depends(get_db)):
