@@ -11,7 +11,8 @@ function VisitorCard({ data }) {
     const getPhotoUrl = (path) => {
         if (!path) return "https://via.placeholder.com/150";
         const filename = path.split(/[/\\]/).pop();
-        return `http://127.0.0.1:8000/uploads/${filename}`;
+        const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+        return `${API_URL}/uploads/${filename}`;
     };
 
     return (
