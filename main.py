@@ -6,7 +6,7 @@ import pytz
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Form, status, Request
+from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Form, status, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -67,7 +67,8 @@ app = FastAPI(title="BKN Visitor System", version="1.0")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+# SECURITY: Public access removed - use protected endpoint instead
+# app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # --- 3. CORS ---
 origins = ["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174"]
@@ -265,7 +266,15 @@ def export_to_excel(current_admin: models.Admin = Depends(get_current_admin), db
         wb.save(filepath)
         
         logger.info(f"Excel exported by {current_admin.username}: {filename}")
-        return FileResponse(filepath, filename=filename, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        
+        # Add background task to cleanup file after download
+        background_tasks.add_task(cleanup_excel_file, filepath)
+        
+        return FileResponse(
+            filepath, 
+            filename=filename, 
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
     
     except Exception as e:
         logger.error(f"Error exporting Excel: {e}")
@@ -396,3 +405,44 @@ def get_visitor_history(nik: str, db: Session = Depends(get_db)):
         })
     
     return {"history": history}
+
+# === SECURE FILE ACCESS ===
+@app.get("/uploads/{filename}", tags=["Files"])
+def get_uploaded_file(filename: str, current_admin: models.Admin = Depends(get_current_admin)):
+    """
+    Protected endpoint for accessing uploaded files.
+    Requires admin authentication to prevent unauthorized access to KTP/visitor photos.
+    """
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    
+    # Security: Prevent directory traversal
+    if ".." in filename or "/" in filename or "\\" in filename:
+        logger.warning(f"Directory traversal attempt blocked: {filename}")
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    
+    # Check if file exists
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Security: Force download to prevent XSS (especially for PDFs/SVGs)
+    # Use inline for images to display in browser
+    media_type = None
+    disposition = "inline"  # For images, show in browser
+    
+    # Detect file type
+    file_ext = filename.lower().split('.')[-1]
+    if file_ext in ['jpg', 'jpeg', 'png', 'gif']:
+        media_type = f"image/{file_ext}" if file_ext != 'jpg' else "image/jpeg"
+        disposition = "inline"  # Display images
+    elif file_ext == 'pdf':
+        media_type = "application/pdf"
+        disposition = "attachment"  # Force download PDFs
+    
+    headers = {
+        "Content-Disposition": f"{disposition}; filename={filename}",
+        "X-Content-Type-Options": "nosniff",  # Prevent MIME sniffing
+        "Cache-Control": "private, max-age=3600"  # Cache for 1 hour
+    }
+    
+    logger.info(f"File access: {filename} by admin {current_admin.username}")
+    return FileResponse(file_path, media_type=media_type, headers=headers)
