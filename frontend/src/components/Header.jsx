@@ -26,7 +26,7 @@ function Header() {
                 >
                     Buku Tamu Digital
                 </Heading>
-                <Text color="#5f6368" fontSize="sm" fontWeight="500" textAlign="center">
+                <Text color="#3c4043" fontSize="sm" fontWeight="500" textAlign="center">
                     Direktorat Infrastruktur TI & Keamanan Informasi
                 </Text>
                 <Text color="#9aa0a6" fontSize="xs">

@@ -69,7 +69,7 @@ function VisitorCard({ data }) {
                         </HStack>
                     </Badge>
 
-                    <HStack spacing={1} color="#5f6368">
+                    <HStack spacing={1} color="#3c4043">
                         <FaBuilding size="12px" />
                         <Text fontSize="sm">
                             {data.institution || "Instansi Tidak Diketahui"}
