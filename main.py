@@ -216,6 +216,19 @@ def create_initial_admin(username: str = Form(...), password: str = Form(...), d
         logger.error(f"Error creating admin: {e}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {e}")
 
+# === HELPER: CLEANUP EXCEL FILES ===
+def cleanup_excel_file(filepath: str):
+    """
+    Background task to delete Excel file after download.
+    Prevents disk space accumulation from exported files.
+    """
+    try:
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            logger.info(f"Cleaned up Excel file: {filepath}")
+    except Exception as e:
+        logger.error(f"Error cleaning up Excel file {filepath}: {e}")
+
 # === EXPORT TO EXCEL ===
 @app.get("/admin/export-excel", tags=["Admin"])
 def export_to_excel(current_admin: models.Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
