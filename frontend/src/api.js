@@ -1,7 +1,10 @@
 // File: frontend/src/api.js
 import axios from 'axios';
 
-const API_BASE_URL = 'http://127.0.0.1:8000';
+// Use environment variable for API base URL
+// Default to localhost for development
+// Override with VITE_API_URL in .env for production/server deployment
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
