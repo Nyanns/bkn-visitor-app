@@ -360,3 +360,39 @@ def check_out(nik: str = Form(...), db: Session = Depends(get_db)):
     db.commit()
     logger.info(f"Check-out: {visitor.full_name if visitor else 'Unknown'} (NIK: {nik})")
     return CheckInOutResponse(status="success", message="Hati-hati di jalan!", time=now_jkt.strftime("%H:%M:%S"))
+
+# === GET VISITOR HISTORY ===
+@app.get("/visitors/{nik}/history", tags=["Visitor"])
+def get_visitor_history(nik: str, db: Session = Depends(get_db)):
+    """Get complete visit history for a visitor"""
+    # Check if visitor exists
+    visitor = db.query(models.Visitor).filter(models.Visitor.nik == nik).first()
+    if not visitor:
+        raise HTTPException(status_code=404, detail="Visitor not found")
+    
+    # Get all visit logs for this visitor, ordered by date descending
+    logs = db.query(models.VisitLog)\
+        .filter(models.VisitLog.visitor_nik == nik)\
+        .order_by(models.VisitLog.check_in_time.desc())\
+        .all()
+    
+    # Format history
+    history = []
+    jakarta_tz = pytz.timezone('Asia/Jakarta')
+    
+    for log in logs:
+        # Format check-in time
+        check_in_jkt = log.check_in_time.replace(tzinfo=pytz.UTC).astimezone(jakarta_tz) if log.check_in_time else None
+        check_out_jkt = log.check_out_time.replace(tzinfo=pytz.UTC).astimezone(jakarta_tz) if log.check_out_time else None
+        
+        # Determine status
+        status = "Selesai" if log.check_out_time else "Sedang Berkunjung"
+        
+        history.append({
+            "date": check_in_jkt.strftime("%d/%m/%Y") if check_in_jkt else "-",
+            "check_in": check_in_jkt.strftime("%H:%M:%S") if check_in_jkt else "-",
+            "check_out": check_out_jkt.strftime("%H:%M:%S") if check_out_jkt else None,
+            "status": status
+        })
+    
+    return {"history": history}
