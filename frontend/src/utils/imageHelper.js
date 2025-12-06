@@ -19,7 +19,7 @@ export const getAuthenticatedImageUrl = async (filename) => {
         });
 
         // Create blob URL
-        const blob URL = URL.createObjectURL(response.data);
+        const blobURL = URL.createObjectURL(response.data);
         return blobURL;
     } catch (error) {
         console.error('Failed to fetch image:', error);
