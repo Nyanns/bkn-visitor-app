@@ -18,7 +18,14 @@ function AdminPage() {
         phone: '',
     });
     const [file, setFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
     const [loading, setLoading] = useState(false);
+
+    // Validation error states
+    const [nikError, setNikError] = useState('');
+    const [phoneError, setPhoneError] = useState('');
+    const [photoError, setPhotoError] = useState('');
+
     const toast = useToast();
     const navigate = useNavigate();
 
@@ -26,8 +33,97 @@ function AdminPage() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    // Validation functions
+    const validateNik = (value) => {
+        if (!value) {
+            setNikError('NIK/NIP wajib diisi');
+            return false;
+        }
+        if (!/^\d+$/.test(value)) {
+            setNikError('NIK/NIP hanya boleh berisi angka');
+            return false;
+        }
+        if (value.length !== 16 && value.length !== 18) {
+            setNikError('NIK harus 16 digit atau NIP harus 18 digit');
+            return false;
+        }
+        setNikError('');
+        return true;
+    };
+
+    const validatePhone = (value) => {
+        if (!value) {
+            setPhoneError('Nomor telepon wajib diisi');
+            return false;
+        }
+        if (!/^\d+$/.test(value)) {
+            setPhoneError('Nomor telepon hanya boleh berisi angka');
+            return false;
+        }
+        if (value.length < 10 || value.length > 15) {
+            setPhoneError('Nomor telepon harus 10-15 digit');
+            return false;
+        }
+        setPhoneError('');
+        return true;
+    };
+
+    const validatePhoto = (file) => {
+        if (!file) {
+            setPhotoError('Foto wajib diunggah');
+            return false;
+        }
+
+        // Check file type
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!validTypes.includes(file.type)) {
+            setPhotoError('Format file harus JPG, JPEG, atau PNG');
+            return false;
+        }
+
+        // Check file size (max 10MB)
+        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        if (file.size > maxSize) {
+            setPhotoError('Ukuran file maksimal 10MB');
+            return false;
+        }
+
+        setPhotoError('');
+        return true;
+    };
+
     const handleFileChange = (e) => {
-        setFile(e.target.files[0]);
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            // Validate file immediately
+            if (validatePhoto(selectedFile)) {
+                setFile(selectedFile);
+
+                // Generate preview
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setImagePreview(reader.result);
+                };
+                reader.readAsDataURL(selectedFile);
+            } else {
+                // Clear file input if validation fails
+                e.target.value = null;
+                setFile(null);
+                setImagePreview(null);
+            }
+        }
+    };
+
+    const handleNikChange = (e) => {
+        const value = e.target.value;
+        setFormData({ ...formData, nik: value });
+        if (value) validateNik(value);
+    };
+
+    const handlePhoneChange = (e) => {
+        const value = e.target.value;
+        setFormData({ ...formData, phone: value });
+        if (value) validatePhone(value);
     };
 
     const handleSubmit = async () => {
@@ -48,6 +144,7 @@ function AdminPage() {
 
             setFormData({ nik: '', full_name: '', institution: '', phone: '' });
             setFile(null);
+            setImagePreview(null);
             document.getElementById("file-input").value = "";
 
         } catch (error) {
@@ -73,7 +170,7 @@ function AdminPage() {
                         variant="ghost"
                         leftIcon={<FaArrowLeft />}
                         onClick={() => navigate('/admin/dashboard')}
-                        color="#5f6368"
+                        color="#3c4043"
                         _hover={{ bg: "#f1f3f4" }}
                     >
                         Kembali
@@ -102,7 +199,7 @@ function AdminPage() {
                     >
                         Registrasi Tamu Baru
                     </Heading>
-                    <Text color="#5f6368" fontSize="sm" textAlign="center">
+                    <Text color="#3c4043" fontSize="sm" textAlign="center">
                         Direktorat INTIKAMI - BKN
                     </Text>
                 </VStack>
@@ -111,25 +208,25 @@ function AdminPage() {
                 <Box
                     bg="white"
                     borderRadius="12px"
-                    p={8}
+                    p={6}
                     boxShadow="0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15)"
                 >
                     <VStack spacing={5}>
                         {/* NIK */}
                         <FormControl isRequired>
-                            <FormLabel fontSize="sm" color="#5f6368" fontWeight="500">
+                            <FormLabel fontSize="sm" color="#3c4043" fontWeight="500">
                                 NIK / NIP
                             </FormLabel>
                             <InputGroup>
-                                <InputLeftElement h="48px">
-                                    <FaIdCard color="#5f6368" />
+                                <InputLeftElement h="44px">
+                                    <FaIdCard color="#3c4043" />
                                 </InputLeftElement>
                                 <Input
                                     name="nik"
-                                    placeholder="Masukkan NIK atau NIP"
+                                    placeholder="16 digit NIK/18 digit NIP (contoh: 3201234567891234)"
                                     value={formData.nik}
                                     onChange={handleChange}
-                                    h="48px"
+                                    h="44px"
                                     border="1px solid #dadce0"
                                     borderRadius="8px"
                                     _hover={{ borderColor: "#202124" }}
@@ -140,19 +237,19 @@ function AdminPage() {
 
                         {/* Nama */}
                         <FormControl isRequired>
-                            <FormLabel fontSize="sm" color="#5f6368" fontWeight="500">
+                            <FormLabel fontSize="sm" color="#3c4043" fontWeight="500">
                                 Nama Lengkap
                             </FormLabel>
                             <InputGroup>
-                                <InputLeftElement h="48px">
-                                    <FaUserPlus color="#5f6368" />
+                                <InputLeftElement h="44px">
+                                    <FaUserPlus color="#3c4043" />
                                 </InputLeftElement>
                                 <Input
                                     name="full_name"
-                                    placeholder="Nama sesuai identitas"
+                                    placeholder="Nama lengkap sesuai KTP/identitas resmi"
                                     value={formData.full_name}
                                     onChange={handleChange}
-                                    h="48px"
+                                    h="44px"
                                     border="1px solid #dadce0"
                                     borderRadius="8px"
                                     _hover={{ borderColor: "#202124" }}
@@ -163,19 +260,19 @@ function AdminPage() {
 
                         {/* Instansi */}
                         <FormControl isRequired>
-                            <FormLabel fontSize="sm" color="#5f6368" fontWeight="500">
+                            <FormLabel fontSize="sm" color="#3c4043" fontWeight="500">
                                 Instansi / Perusahaan
                             </FormLabel>
                             <InputGroup>
-                                <InputLeftElement h="48px">
-                                    <FaBuilding color="#5f6368" />
+                                <InputLeftElement h="44px">
+                                    <FaBuilding color="#3c4043" />
                                 </InputLeftElement>
                                 <Input
                                     name="institution"
-                                    placeholder="Contoh: Kementerian PANRB"
+                                    placeholder="Nama instansi/perusahaan (contoh: Kementerian PANRB)"
                                     value={formData.institution}
                                     onChange={handleChange}
-                                    h="48px"
+                                    h="44px"
                                     border="1px solid #dadce0"
                                     borderRadius="8px"
                                     _hover={{ borderColor: "#202124" }}
@@ -186,19 +283,19 @@ function AdminPage() {
 
                         {/* Phone */}
                         <FormControl>
-                            <FormLabel fontSize="sm" color="#5f6368" fontWeight="500">
+                            <FormLabel fontSize="sm" color="#3c4043" fontWeight="500">
                                 No. Telepon (Opsional)
                             </FormLabel>
                             <InputGroup>
-                                <InputLeftElement h="48px">
-                                    <FaPhone color="#5f6368" />
+                                <InputLeftElement h="44px">
+                                    <FaPhone color="#3c4043" />
                                 </InputLeftElement>
                                 <Input
                                     name="phone"
-                                    placeholder="08xxxxxxxxxx"
+                                    placeholder="08XX-XXXX-XXXX (untuk keperluan darurat)"
                                     value={formData.phone}
                                     onChange={handleChange}
-                                    h="48px"
+                                    h="44px"
                                     border="1px solid #dadce0"
                                     borderRadius="8px"
                                     _hover={{ borderColor: "#202124" }}
@@ -209,52 +306,81 @@ function AdminPage() {
 
                         {/* Photo Upload */}
                         <FormControl isRequired>
-                            <FormLabel fontSize="sm" color="#5f6368" fontWeight="500">
+                            <FormLabel fontSize="sm" color="#3c4043" fontWeight="500">
                                 Foto Wajah
                             </FormLabel>
-                            <Box
-                                border="2px dashed #dadce0"
-                                borderRadius="12px"
-                                p={6}
-                                textAlign="center"
-                                bg="#f8f9fa"
-                                _hover={{ borderColor: "#1a73e8", bg: "#e8f0fe" }}
-                                transition="all 0.2s"
-                                cursor="pointer"
-                                onClick={() => document.getElementById('file-input').click()}
-                            >
-                                <VStack spacing={2}>
-                                    <Flex
-                                        w="48px"
-                                        h="48px"
-                                        bg="#e8f0fe"
-                                        borderRadius="full"
-                                        align="center"
-                                        justify="center"
+                            {imagePreview ? (
+                                <Box position="relative">
+                                    <Box
+                                        borderRadius="12px"
+                                        overflow="hidden"
+                                        border="2px solid #1a73e8"
                                     >
-                                        <FaCamera color="#1a73e8" size="20px" />
-                                    </Flex>
-                                    <Text color="#1a73e8" fontWeight="500" fontSize="sm">
-                                        {file ? file.name : "Klik untuk upload foto"}
-                                    </Text>
-                                    <Text color="#5f6368" fontSize="xs">
-                                        JPG atau PNG (Max 2MB)
-                                    </Text>
-                                </VStack>
-                                <Input
-                                    id="file-input"
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleFileChange}
-                                    display="none"
-                                />
-                            </Box>
+                                        <img
+                                            src={imagePreview}
+                                            alt="Preview"
+                                            style={{ width: '100%', maxHeight: '300px', objectFit: 'cover' }}
+                                        />
+                                    </Box>
+                                    <Button
+                                        size="sm"
+                                        mt={3}
+                                        variant="outline"
+                                        borderColor="#dadce0"
+                                        onClick={() => {
+                                            setFile(null);
+                                            setImagePreview(null);
+                                            document.getElementById('file-input').value = '';
+                                        }}
+                                    >
+                                        Ganti Foto
+                                    </Button>
+                                </Box>
+                            ) : (
+                                <Box
+                                    border="2px dashed #dadce0"
+                                    borderRadius="12px"
+                                    p={6}
+                                    textAlign="center"
+                                    bg="#f8f9fa"
+                                    _hover={{ borderColor: "#1a73e8", bg: "#e8f0fe" }}
+                                    transition="all 0.2s"
+                                    cursor="pointer"
+                                    onClick={() => document.getElementById('file-input').click()}
+                                >
+                                    <VStack spacing={2}>
+                                        <Flex
+                                            w="48px"
+                                            h="44px"
+                                            bg="#e8f0fe"
+                                            borderRadius="full"
+                                            align="center"
+                                            justify="center"
+                                        >
+                                            <FaCamera color="#1a73e8" size="20px" />
+                                        </Flex>
+                                        <Text color="#1a73e8" fontWeight="500" fontSize="sm">
+                                            Klik untuk upload foto
+                                        </Text>
+                                        <Text color="#3c4043" fontSize="xs">
+                                            JPG atau PNG (Max 10MB)
+                                        </Text>
+                                    </VStack>
+                                </Box>
+                            )}
+                            <Input
+                                id="file-input"
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                                display="none"
+                            />
                         </FormControl>
 
                         {/* Submit Button */}
                         <Button
                             w="full"
-                            h="48px"
+                            h="44px"
                             bg="#1a73e8"
                             color="white"
                             borderRadius="8px"
@@ -272,9 +398,23 @@ function AdminPage() {
                         </Button>
                     </VStack>
                 </Box>
+
+                {/* Footer */}
+                <VStack spacing={1} pt={6}>
+                    <Text fontSize="10px" color="#9aa0a6" textAlign="center">
+                        BKN Visitor System v1.0.0
+                    </Text>
+                    <Text fontSize="10px" color="#9aa0a6" textAlign="center">
+                        © 2025 Direktorat INTIKAMI - BKN
+                    </Text>
+                </VStack>
             </Container>
         </Box>
     );
 }
 
 export default AdminPage;
+
+
+
+

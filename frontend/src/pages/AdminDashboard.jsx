@@ -5,7 +5,7 @@ import {
     Box, Table, Thead, Tbody, Tr, Th, Td, Badge, Heading,
     Container, Image, Text, Button, HStack, Input, InputGroup,
     InputLeftElement, useToast, Spinner, Center, Flex, VStack,
-    IconButton, Stat, StatLabel, StatNumber, StatHelpText, SimpleGrid
+    IconButton, Stat, StatLabel, StatNumber, StatHelpText, SimpleGrid, Skeleton, SkeletonCircle, SkeletonText
 } from '@chakra-ui/react';
 import { FaSearch, FaSync, FaUserPlus, FaSignOutAlt, FaFileExcel, FaUsers, FaUserCheck, FaCalendarAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
@@ -74,10 +74,18 @@ function AdminDashboard() {
         log.nik.includes(searchTerm)
     );
 
-    // Stats calculations
-    const totalVisitors = logs.length;
-    const activeVisitors = logs.filter(log => log.status === "Sedang Berkunjung").length;
+    // Stats calculations - ONLY TODAY
     const todayDate = new Date().toLocaleDateString('id-ID');
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+    const todayLogs = logs.filter(log => {
+        if (!log.check_in_time) return false;
+        const logDate = new Date(log.check_in_time).toISOString().split('T')[0];
+        return logDate === today;
+    });
+
+    const totalVisitors = todayLogs.length;
+    const activeVisitors = todayLogs.filter(log => log.status === "Sedang Berkunjung").length;
 
     return (
         <Box bg="#f8f9fa" minH="100vh">
@@ -225,11 +233,16 @@ function AdminDashboard() {
                             </Thead>
                             <Tbody>
                                 {loading ? (
-                                    <Tr>
-                                        <Td colSpan={6} py={10}>
-                                            <Center><Spinner size="lg" color="#1a73e8" /></Center>
-                                        </Td>
-                                    </Tr>
+                                    [1, 2, 3, 4, 5].map((i) => (
+                                        <Tr key={i}>
+                                            <Td><SkeletonCircle size="10" /></Td>
+                                            <Td><SkeletonText noOfLines={2} spacing={2} /></Td>
+                                            <Td><Skeleton height="20px" /></Td>
+                                            <Td><Skeleton height="20px" /></Td>
+                                            <Td><Skeleton height="20px" /></Td>
+                                            <Td><Skeleton height="24px" width="80px" borderRadius="12px" /></Td>
+                                        </Tr>
+                                    ))
                                 ) : filteredLogs.length === 0 ? (
                                     <Tr>
                                         <Td colSpan={6} textAlign="center" py={10} color="#5f6368">
