@@ -1,5 +1,9 @@
-import { useState, lazy, Suspense } from 'react';
-import { Box, Container, useToast, Spinner, Center } from '@chakra-ui/react';
+import { useState, lazy, Suspense, useRef } from 'react';
+import {
+  Box, Container, useToast, Spinner, Center,
+  AlertDialog, AlertDialogBody, AlertDialogFooter, AlertDialogHeader,
+  AlertDialogContent, AlertDialogOverlay, Button
+} from '@chakra-ui/react';
 import api from './api';
 
 // Lazy load page components for code splitting
@@ -12,6 +16,8 @@ function App() {
   const [visitorData, setVisitorData] = useState(null);
   const [checkInStatus, setCheckInStatus] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isCheckOutDialogOpen, setIsCheckOutDialogOpen] = useState(false);
+  const cancelRef = useRef();
 
   const toast = useToast();
 
@@ -32,7 +38,14 @@ function App() {
         toast({ title: "Sesi Aktif", description: "Anda belum Check-Out.", status: "info", position: "top", duration: 3000, isClosable: true });
       }
     } catch (error) {
-      toast({ title: "Data Tidak Ditemukan", status: "error", position: "top", duration: 3000, isClosable: true });
+      toast({
+        title: "Data Tidak Ditemukan",
+        description: "NIK/NIP belum terdaftar. Silakan hubungi resepsionis untuk registrasi terlebih dahulu.",
+        status: "error",
+        position: "top",
+        duration: 5000,
+        isClosable: true
+      });
     } finally {
       setLoading(false);
     }
@@ -44,10 +57,23 @@ function App() {
     try {
       const formData = new FormData();
       formData.append('nik', nik);
-      await api.post('/check-in/', formData);
+      const response = await api.post('/check-in/', formData);
 
-      toast({ title: "Berhasil Masuk!", status: "success", position: "top", duration: 3000, isClosable: true });
+      // Show success with timestamp
+      const checkInTime = response.data.time || new Date().toLocaleTimeString('id-ID');
+      toast({
+        title: "Check-In Berhasil!",
+        description: `Waktu check-in: ${checkInTime} WIB`,
+        status: "success",
+        position: "top",
+        duration: 4000,
+        isClosable: true
+      });
       setCheckInStatus(true);
+
+      // Refresh visitor data to update check-in time display
+      const visitorResponse = await api.get(`/visitors/${nik}`);
+      setVisitorData(visitorResponse.data);
     } catch (error) {
       // Cek error khusus "sudah masuk"
       const msg = error.response?.data?.detail || "";
@@ -63,7 +89,12 @@ function App() {
   };
 
   // --- LOGIC: CHECK-OUT ---
+  const confirmCheckOut = () => {
+    setIsCheckOutDialogOpen(true);
+  };
+
   const handleCheckOut = async () => {
+    setIsCheckOutDialogOpen(false);
     setLoading(true);
     try {
       const formData = new FormData();
@@ -111,12 +142,40 @@ function App() {
               visitorData={visitorData}
               handleBack={handleBack}
               handleCheckIn={handleCheckIn}
-              handleCheckOut={handleCheckOut}
+              handleCheckOut={confirmCheckOut}
               checkInStatus={checkInStatus}
               loading={loading}
             />
           )}
         </Suspense>
+
+        {/* Check-Out Confirmation Dialog */}
+        <AlertDialog
+          isOpen={isCheckOutDialogOpen}
+          leastDestructiveRef={cancelRef}
+          onClose={() => setIsCheckOutDialogOpen(false)}
+        >
+          <AlertDialogOverlay>
+            <AlertDialogContent>
+              <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                Konfirmasi Check-Out
+              </AlertDialogHeader>
+
+              <AlertDialogBody>
+                Apakah Anda yakin ingin check-out? Anda akan kembali ke halaman login.
+              </AlertDialogBody>
+
+              <AlertDialogFooter>
+                <Button ref={cancelRef} onClick={() => setIsCheckOutDialogOpen(false)}>
+                  Batal
+                </Button>
+                <Button colorScheme="red" onClick={handleCheckOut} ml={3} isLoading={loading}>
+                  Ya, Check-Out
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialogOverlay>
+        </AlertDialog>
       </Container>
     </Box>
   );
