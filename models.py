@@ -23,6 +23,8 @@ class Visitor(Base):
     logs = relationship("VisitLog", back_populates="visitor")
 
 # Tabel 2: Log Kunjungan
+# TIMEZONE CONVENTION: All DateTime fields store naive datetime (UTC)
+# Application layer converts to Jakarta timezone (UTC+7) for display
 class VisitLog(Base):
     __tablename__ = "visit_logs"
 
@@ -30,6 +32,7 @@ class VisitLog(Base):
     visitor_nik = Column(String, ForeignKey("visitors.nik"))
     visit_date = Column(Date, default=datetime.now().date)
     
+    # Stored as naive datetime (UTC) - converted to Jakarta (UTC+7) when displayed
     check_in_time = Column(DateTime, default=datetime.now)
     check_out_time = Column(DateTime, nullable=True)
     
