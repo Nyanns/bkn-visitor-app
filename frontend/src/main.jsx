@@ -1,41 +1,49 @@
-import React from 'react'
+import React, { lazy, Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
-import { ChakraProvider } from '@chakra-ui/react'
+import { ChakraProvider, Spinner, Center } from '@chakra-ui/react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 import App from './App.jsx'
-import AdminLoginPage from './pages/AdminLoginPage.jsx'
-import AdminPage from './pages/AdminPage.jsx'
-import AdminDashboard from './pages/AdminDashboard.jsx'
-import ProtectedRoute from './components/ProtectedRoute.jsx' // Import Satpam
+
+// Lazy load admin pages for better performance and code splitting
+const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage.jsx'))
+const AdminPage = lazy(() => import('./pages/AdminPage.jsx'))
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard.jsx'))
+const ProtectedRoute = lazy(() => import('./components/ProtectedRoute.jsx'))
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ChakraProvider>
       <BrowserRouter>
-        <Routes>
-          {/* USER (Bebas Akses) */}
-          <Route path="/" element={<App />} />
+        <Suspense fallback={
+          <Center minH="100vh">
+            <Spinner size="xl" color="blue.500" thickness="4px" />
+          </Center>
+        }>
+          <Routes>
+            {/* USER (Bebas Akses) */}
+            <Route path="/" element={<App />} />
 
-          {/* ADMIN LOGIN (Pintu Masuk) */}
-          <Route path="/admin/login" element={<AdminLoginPage />} />
+            {/* ADMIN LOGIN (Pintu Masuk) */}
+            <Route path="/admin/login" element={<AdminLoginPage />} />
 
-          {/* ADMIN AREA (Dilindungi Satpam) */}
-          <Route path="/admin/dashboard" element={
-            <ProtectedRoute>
-              <AdminDashboard />
-            </ProtectedRoute>
-          } />
+            {/* ADMIN AREA (Dilindungi Satpam) */}
+            <Route path="/admin/dashboard" element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/admin/register" element={
-            <ProtectedRoute>
-              <AdminPage />
-            </ProtectedRoute>
-          } />
+            <Route path="/admin/register" element={
+              <ProtectedRoute>
+                <AdminPage />
+              </ProtectedRoute>
+            } />
 
-          {/* Redirect Default */}
-          <Route path="/admin" element={<AdminLoginPage />} />
-        </Routes>
+            {/* Redirect Default */}
+            <Route path="/admin" element={<AdminLoginPage />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </ChakraProvider>
   </React.StrictMode>,

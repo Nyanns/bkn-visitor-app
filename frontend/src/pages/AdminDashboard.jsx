@@ -10,6 +10,8 @@ import {
 import { FaSearch, FaSync, FaUserPlus, FaSignOutAlt, FaFileExcel, FaUsers, FaUserCheck, FaCalendarAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import AuthenticatedImage from '../components/AuthenticatedImage';
+import SessionTimeout from '../utils/sessionTimeout';
 
 function AdminDashboard() {
     const [logs, setLogs] = useState([]);
@@ -35,6 +37,25 @@ function AdminDashboard() {
 
     useEffect(() => {
         fetchLogs();
+
+        // Initialize session timeout (30 minutes idle = auto logout)
+        const sessionTimeout = new SessionTimeout(30, () => {
+            toast({
+                title: "Sesi Berakhir",
+                description: "Anda telah logout otomatis karena tidak aktif selama 30 menit.",
+                status: "warning",
+                position: "top",
+                duration: 5000
+            });
+            handleLogout();
+        });
+
+        sessionTimeout.start();
+
+        // Cleanup on unmount
+        return () => {
+            sessionTimeout.stop();
+        };
     }, []);
 
     const handleLogout = () => {

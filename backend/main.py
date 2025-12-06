@@ -59,11 +59,22 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
 MAX_FILE_SIZE = 2 * 1024 * 1024  
 UPLOAD_DIR = "uploads"
+BACKUP_DIR = "backups"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(BACKUP_DIR, exist_ok=True)
 
 # Setup Limiter
 limiter = Limiter(key_func=get_remote_address)
-app = FastAPI(title="BKN Visitor System", version="1.0")
+
+# Initialize FastAPI with API Documentation
+app = FastAPI(
+    title="BKN Visitor System",
+    version="1.0.0",
+    description="Sistem Manajemen Tamu BKN - Direktorat INTIKAMI",
+    docs_url="/api/docs",      # Swagger UI
+    redoc_url="/api/redoc",    # ReDoc (alternative docs)
+    openapi_url="/api/openapi.json"
+)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -71,10 +82,19 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # --- 3. CORS ---
-origins = ["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174"]
+# Load allowed origins from environment variable (comma-separated)
+# Default to localhost for development
+ALLOWED_ORIGINS = os.getenv(
+    "ALLOWED_ORIGINS", 
+    "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174"
+).split(",")
+
 app.add_middleware(
-    CORSMiddleware, allow_origins=origins, allow_credentials=True, 
-    allow_methods=["GET", "POST"], allow_headers=["*"]
+    CORSMiddleware, 
+    allow_origins=ALLOWED_ORIGINS, 
+    allow_credentials=True, 
+    allow_methods=["GET", "POST"], 
+    allow_headers=["*"]
 )
 
 # --- 4. SCHEMAS ---
@@ -175,9 +195,65 @@ def validate_and_save_file(upload_file: UploadFile) -> str:
 
 # --- 7. API ENDPOINTS ---
 
-@app.get("/")
+@app.get("/", tags=["System"])
 def read_root():
-    return {"status": "online", "system": "BKN Visitor App v1.0 Secure"}
+    """Root endpoint - API Status"""
+    return {"status": "online", "system": "BKN Visitor App v1.0.0", "docs": "/api/docs"}
+
+# === MONITORING ENDPOINTS ===
+@app.get("/health", tags=["Monitoring"])
+def health_check(db: Session = Depends(get_db)):
+    """
+    Health check endpoint for monitoring tools (e.g., Docker, Kubernetes)
+    Returns HTTP 200 if system is healthy, 503 otherwise
+    """
+    try:
+        # Check database connectivity
+        db.execute("SELECT 1")
+        
+        return {
+            "status": "healthy",
+            "timestamp": datetime.now(JAKARTA_TZ).isoformat(),
+            "checks": {
+                "database": "ok",
+                "api": "ok"
+            }
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(
+            status_code=503, 
+            detail={"status": "unhealthy", "error": "Database connection failed"}
+        )
+
+@app.get("/metrics", tags=["Monitoring"])
+def get_metrics(db: Session = Depends(get_db)):
+    """
+    Basic metrics endpoint for monitoring
+    Returns counts of visitors, visits, and active sessions
+    """
+    try:
+        total_visitors = db.query(models.Visitor).count()
+        total_visits = db.query(models.VisitLog).count()
+        
+        # Active visits today
+        today = datetime.now(JAKARTA_TZ).date()
+        active_visits = db.query(models.VisitLog).filter(
+            models.VisitLog.visit_date == today,
+            models.VisitLog.check_out_time == None
+        ).count()
+        
+        return {
+            "timestamp": datetime.now(JAKARTA_TZ).isoformat(),
+            "metrics": {
+                "total_visitors": total_visitors,
+                "total_visits": total_visits,
+                "active_visits_today": active_visits
+            }
+        }
+    except Exception as e:
+        logger.error(f"Metrics collection failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to collect metrics")
 
 # === LOGIN ADMIN ===
 @app.post("/token", response_model=Token)
@@ -214,7 +290,7 @@ def create_initial_admin(username: str = Form(...), password: str = Form(...), d
         return {"status": "success", "message": f"Admin {username} berhasil dibuat"}
     except Exception as e:
         logger.error(f"Error creating admin: {e}")
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {e}")
+        raise HTTPException(status_code=500, detail="Terjadi kesalahan server. Silakan coba lagi.")
 
 # === HELPER: CLEANUP EXCEL FILES ===
 def cleanup_excel_file(filepath: str):
@@ -254,14 +330,30 @@ def export_to_excel(background_tasks: BackgroundTasks, current_admin: models.Adm
             cell.font = header_font
             cell.alignment = Alignment(horizontal="center")
         
-        # Data rows
+        # Data rows with timezone conversion
+        jakarta_tz = pytz.timezone('Asia/Jakarta')
+        
         for idx, (log, visitor) in enumerate(results, 2):
             ws.cell(row=idx, column=1, value=idx-1)
             ws.cell(row=idx, column=2, value=visitor.nik)
             ws.cell(row=idx, column=3, value=visitor.full_name)
             ws.cell(row=idx, column=4, value=visitor.institution)
-            ws.cell(row=idx, column=5, value=log.check_in_time.strftime("%Y-%m-%d %H:%M") if log.check_in_time else "-")
-            ws.cell(row=idx, column=6, value=log.check_out_time.strftime("%Y-%m-%d %H:%M") if log.check_out_time else "-")
+            
+            # Convert UTC to Jakarta timezone for display
+            if log.check_in_time:
+                check_in_utc = log.check_in_time.replace(tzinfo=pytz.UTC)
+                check_in_jkt = check_in_utc.astimezone(jakarta_tz)
+                ws.cell(row=idx, column=5, value=check_in_jkt.strftime("%Y-%m-%d %H:%M"))
+            else:
+                ws.cell(row=idx, column=5, value="-")
+                
+            if log.check_out_time:
+                check_out_utc = log.check_out_time.replace(tzinfo=pytz.UTC)
+                check_out_jkt = check_out_utc.astimezone(jakarta_tz)
+                ws.cell(row=idx, column=6, value=check_out_jkt.strftime("%Y-%m-%d %H:%M"))
+            else:
+                ws.cell(row=idx, column=6, value="-")
+                
             ws.cell(row=idx, column=7, value="Sedang Berkunjung" if not log.check_out_time else "Selesai")
         
         # Adjust column widths
@@ -275,7 +367,7 @@ def export_to_excel(background_tasks: BackgroundTasks, current_admin: models.Adm
         
         # Save file
         filename = f"Laporan_Tamu_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
-        filepath = f"backups/{filename}"
+        filepath = os.path.join(BACKUP_DIR, filename)
         wb.save(filepath)
         
         logger.info(f"Excel exported by {current_admin.username}: {filename}")
@@ -293,6 +385,7 @@ def export_to_excel(background_tasks: BackgroundTasks, current_admin: models.Adm
         logger.error(f"Error exporting Excel: {e}")
         raise HTTPException(status_code=500, detail="Gagal export Excel")
 
+
 # === PROTECTED ENDPOINTS ===
 @app.get("/admin/logs", tags=["Admin"])
 def get_admin_logs(current_admin: models.Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
@@ -301,13 +394,34 @@ def get_admin_logs(current_admin: models.Admin = Depends(get_current_admin), db:
         .order_by(models.VisitLog.check_in_time.desc()).all()
     
     logs_data = []
+    jakarta_tz = pytz.timezone('Asia/Jakarta')
+    
     for log, visitor in results:
         status_visit = "Selesai" if log.check_out_time else "Sedang Berkunjung"
         photo_url = f"/uploads/{os.path.basename(visitor.photo_path)}" if visitor.photo_path else None
+        
+        # Convert UTC (stored as naive datetime) to Jakarta timezone
+        if log.check_in_time:
+            check_in_utc = log.check_in_time.replace(tzinfo=pytz.UTC)
+            check_in_jkt = check_in_utc.astimezone(jakarta_tz)
+        else:
+            check_in_jkt = None
+            
+        if log.check_out_time:
+            check_out_utc = log.check_out_time.replace(tzinfo=pytz.UTC)
+            check_out_jkt = check_out_utc.astimezone(jakarta_tz)
+        else:
+            check_out_jkt = None
+        
         logs_data.append({
-            "id": log.id, "nik": visitor.nik, "full_name": visitor.full_name,
-            "institution": visitor.institution, "check_in_time": log.check_in_time,
-            "check_out_time": log.check_out_time, "status": status_visit, "photo_url": photo_url
+            "id": log.id, 
+            "nik": visitor.nik, 
+            "full_name": visitor.full_name,
+            "institution": visitor.institution, 
+            "check_in_time": check_in_jkt,  # Send Jakarta time
+            "check_out_time": check_out_jkt,  # Send Jakarta time
+            "status": status_visit, 
+            "photo_url": photo_url
         })
     return logs_data
 
@@ -383,33 +497,53 @@ def check_in(nik: str = Form(...), db: Session = Depends(get_db)):
     validate_nik(nik)
     visitor = db.query(models.Visitor).filter(models.Visitor.nik == nik).first()
     if not visitor: raise HTTPException(404, "NIK tidak ditemukan.")
+    
+    # Get current time in Jakarta timezone
     now_jkt = datetime.now(JAKARTA_TZ)
+    
+    # Convert to UTC for storage (consistent timezone in database)
+    now_utc = now_jkt.astimezone(pytz.UTC).replace(tzinfo=None)
+    
     active_visit = db.query(models.VisitLog).filter(
-        models.VisitLog.visitor_nik == nik, models.VisitLog.visit_date == now_jkt.date(),
+        models.VisitLog.visitor_nik == nik, 
+        models.VisitLog.visit_date == now_jkt.date(),
         models.VisitLog.check_out_time == None
     ).first()
     if active_visit: 
-        return CheckInOutResponse(status="info", message="Sudah masuk.", time=str(now_jkt))
+        return CheckInOutResponse(status="info", message="Sudah masuk.", time=now_jkt.strftime("%H:%M:%S"))
     
-    new_log = models.VisitLog(visitor_nik=nik, check_in_time=now_jkt.replace(tzinfo=None), visit_date=now_jkt.date())
+    # Store UTC time in database
+    new_log = models.VisitLog(
+        visitor_nik=nik, 
+        check_in_time=now_utc, 
+        visit_date=now_jkt.date()
+    )
     db.add(new_log)
     db.commit()
-    logger.info(f"Check-in: {visitor.full_name} (NIK: {nik})")
+    logger.info(f"Check-in: {visitor.full_name} (NIK: {nik}) at {now_jkt.strftime('%Y-%m-%d %H:%M:%S %Z')}")
     return CheckInOutResponse(status="success", message=f"Selamat Datang {visitor.full_name}!", time=now_jkt.strftime("%H:%M:%S"))
 
 @app.post("/check-out/", tags=["Attendance"])
 def check_out(nik: str = Form(...), db: Session = Depends(get_db)):
+    # Get current time in Jakarta timezone
     now_jkt = datetime.now(JAKARTA_TZ)
+    
+    # Convert to UTC for storage
+    now_utc = now_jkt.astimezone(pytz.UTC).replace(tzinfo=None)
+    
     active_visit = db.query(models.VisitLog).filter(
-        models.VisitLog.visitor_nik == nik, models.VisitLog.visit_date == now_jkt.date(),
+        models.VisitLog.visitor_nik == nik, 
+        models.VisitLog.visit_date == now_jkt.date(),
         models.VisitLog.check_out_time == None
     ).first()
     if not active_visit: raise HTTPException(400, "Belum Check-In.")
     
     visitor = db.query(models.Visitor).filter(models.Visitor.nik == nik).first()
-    active_visit.check_out_time = now_jkt.replace(tzinfo=None)
+    
+    # Store UTC time in database
+    active_visit.check_out_time = now_utc
     db.commit()
-    logger.info(f"Check-out: {visitor.full_name if visitor else 'Unknown'} (NIK: {nik})")
+    logger.info(f"Check-out: {visitor.full_name if visitor else 'Unknown'} (NIK: {nik}) at {now_jkt.strftime('%Y-%m-%d %H:%M:%S %Z')}")
     return CheckInOutResponse(status="success", message="Hati-hati di jalan!", time=now_jkt.strftime("%H:%M:%S"))
 
 # === GET VISITOR HISTORY ===
@@ -432,9 +566,20 @@ def get_visitor_history(nik: str, db: Session = Depends(get_db)):
     jakarta_tz = pytz.timezone('Asia/Jakarta')
     
     for log in logs:
-        # Format check-in time
-        check_in_jkt = log.check_in_time.replace(tzinfo=pytz.UTC).astimezone(jakarta_tz) if log.check_in_time else None
-        check_out_jkt = log.check_out_time.replace(tzinfo=pytz.UTC).astimezone(jakarta_tz) if log.check_out_time else None
+        # Database stores naive datetime (UTC)
+        # Convert to Jakarta timezone for display
+        if log.check_in_time:
+            # Treat naive datetime as UTC, then convert to Jakarta
+            check_in_utc = log.check_in_time.replace(tzinfo=pytz.UTC)
+            check_in_jkt = check_in_utc.astimezone(jakarta_tz)
+        else:
+            check_in_jkt = None
+            
+        if log.check_out_time:
+            check_out_utc = log.check_out_time.replace(tzinfo=pytz.UTC)
+            check_out_jkt = check_out_utc.astimezone(jakarta_tz)
+        else:
+            check_out_jkt = None
         
         # Determine status
         status = "Selesai" if log.check_out_time else "Sedang Berkunjung"

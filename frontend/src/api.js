@@ -25,4 +25,21 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
+// --- RESPONSE INTERCEPTOR (Auto-handle token expiry) ---
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        // If token expired (401), auto logout and redirect
+        if (error.response && error.response.status === 401) {
+            localStorage.removeItem('adminToken');
+
+            // Only redirect if not already on login page
+            if (!window.location.pathname.includes('/login')) {
+                window.location.href = '/admin/login';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default api;
