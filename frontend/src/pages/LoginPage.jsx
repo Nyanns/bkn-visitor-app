@@ -1,5 +1,6 @@
 // File: frontend/src/pages/LoginPage.jsx
 // Google Material Design Style (Matching Admin Login)
+import { useRef, useEffect } from 'react';
 import {
     Box, Button, FormControl, Input,
     Heading, VStack, Text, InputGroup, InputLeftElement,
@@ -8,6 +9,14 @@ import {
 import { FaBuilding, FaIdCard } from 'react-icons/fa';
 
 function LoginPage({ nik, setNik, handleLogin, loading }) {
+    const nikInputRef = useRef(null);
+
+    // Auto-focus on mount
+    useEffect(() => {
+        if (nikInputRef.current) {
+            nikInputRef.current.focus();
+        }
+    }, []);
 
     const handleNikChange = (e) => {
         const value = e.target.value;
@@ -25,7 +34,7 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
         >
             <Box
                 bg="white"
-                p={10}
+                p={6}
                 borderRadius="8px"
                 boxShadow="0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15)"
                 w="400px"
@@ -54,7 +63,7 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
                         >
                             Sign in
                         </Heading>
-                        <Text color="#5f6368" fontSize="sm">
+                        <Text color="#3c4043" fontSize="sm">
                             Data Center Visitor System
                         </Text>
                     </VStack>
@@ -63,14 +72,15 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
                     <VStack spacing={4} w="full">
                         <FormControl>
                             <InputGroup>
-                                <InputLeftElement h="48px">
-                                    <FaIdCard color="#5f6368" />
+                                <InputLeftElement h="44px">
+                                    <FaIdCard color="#3c4043" />
                                 </InputLeftElement>
                                 <Input
-                                    h="48px"
+                                    ref={nikInputRef}
+                                    h="44px"
                                     value={nik}
                                     onChange={handleNikChange}
-                                    placeholder="Nomor Induk Kependudukan (NIK)"
+                                    placeholder="Masukkan NIK 16 digit atau NIP Anda"
                                     border="1px solid #dadce0"
                                     borderRadius="4px"
                                     _hover={{ borderColor: "#202124" }}
@@ -86,7 +96,7 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
                     {/* Button */}
                     <Button
                         w="full"
-                        h="48px"
+                        h="44px"
                         bg="#1a73e8"
                         color="white"
                         borderRadius="4px"
@@ -101,9 +111,17 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
                     </Button>
 
                     {/* Footer */}
-                    <Text color="#5f6368" fontSize="12px" pt={4}>
-                        © 2025 BKN - Direktorat INTIKAMI
-                    </Text>
+                    <VStack spacing={2} pt={4}>
+                        <Text color="#3c4043" fontSize="11px">
+                            BKN Visitor System v1.0.0
+                        </Text>
+                        <Text color="#3c4043" fontSize="10px" textAlign="center">
+                            Belum terdaftar? Hubungi resepsionis
+                        </Text>
+                        <Text color="#3c4043" fontSize="10px">
+                            © 2025 BKN - Direktorat INTIKAMI
+                        </Text>
+                    </VStack>
                 </VStack>
             </Box>
         </Flex>
@@ -111,3 +129,7 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
 }
 
 export default LoginPage;
+
+
+
+

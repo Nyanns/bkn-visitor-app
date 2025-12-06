@@ -52,7 +52,7 @@ function AdminLoginPage() {
         >
             <Box
                 bg="white"
-                p={10}
+                p={6}
                 borderRadius="8px"
                 boxShadow="0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15)"
                 w="400px"
@@ -81,7 +81,7 @@ function AdminLoginPage() {
                         >
                             Sign in
                         </Heading>
-                        <Text color="#5f6368" fontSize="sm">
+                        <Text color="#3c4043" fontSize="sm">
                             Admin Portal - Data Center Visitor System
                         </Text>
                     </VStack>
@@ -90,11 +90,11 @@ function AdminLoginPage() {
                     <VStack spacing={4} w="full">
                         <FormControl>
                             <InputGroup>
-                                <InputLeftElement h="48px">
-                                    <FaUser color="#5f6368" />
+                                <InputLeftElement h="44px">
+                                    <FaUser color="#3c4043" />
                                 </InputLeftElement>
                                 <Input
-                                    h="48px"
+                                    h="44px"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     placeholder="Username"
@@ -109,11 +109,11 @@ function AdminLoginPage() {
 
                         <FormControl>
                             <InputGroup>
-                                <InputLeftElement h="48px">
-                                    <FaLock color="#5f6368" />
+                                <InputLeftElement h="44px">
+                                    <FaLock color="#3c4043" />
                                 </InputLeftElement>
                                 <Input
-                                    h="48px"
+                                    h="44px"
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
@@ -132,7 +132,7 @@ function AdminLoginPage() {
                     {/* Button */}
                     <Button
                         w="full"
-                        h="48px"
+                        h="44px"
                         bg="#1a73e8"
                         color="white"
                         borderRadius="4px"
@@ -147,7 +147,7 @@ function AdminLoginPage() {
                     </Button>
 
                     {/* Footer */}
-                    <Text color="#5f6368" fontSize="12px" pt={4}>
+                    <Text color="#3c4043" fontSize="12px" pt={4}>
                         © 2025 BKN - Direktorat INTIKAMI
                     </Text>
                 </VStack>
@@ -157,3 +157,7 @@ function AdminLoginPage() {
 }
 
 export default AdminLoginPage;
+
+
+
+
