@@ -1,19 +1,88 @@
 # File: .gitignore
 
-# 1. Abaikan file Environment (Password)
+# ===================================
+# ENVIRONMENT & SECRETS
+# ===================================
 .env
+.env.local
+.env.*.local
 
-# 2. Abaikan folder Virtual Environment (Biar ringan)
+# ===================================
+# PYTHON
+# ===================================
+# Virtual Environment
 venv/
 .venv/
+env/
+ENV/
 
-# 3. Abaikan folder cache Python
+# Python cache
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
 
-# 4. Abaikan file upload user (Data privasi orang lain)
+# ===================================
+# NODE.JS / FRONTEND
+# ===================================
+# Dependencies (CRITICAL - Don't commit!)
+node_modules/
+package-lock.json  # Optional, can remove this line if you want to commit it
+
+# Build output
+dist/
+build/
+.vite/
+*.local
+
+# ===================================
+# DATABASE & UPLOADS
+# ===================================
+# SQLite database (contains user data)
+*.db
+*.sqlite
+*.sqlite3
+
+# User uploads (privacy)
 backend/uploads/
 
-# 5. Abaikan file sistem operasi
+# Backups
+backend/backups/*.xlsx
+backend/backups/*.db
+
+# ===================================
+# LOGS
+# ===================================
+backend/logs/*.log
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===================================
+# IDE & EDITORS
+# ===================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
 Thumbs.db
+
+# ===================================
+# OS FILES
+# ===================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===================================
+# TEMPORARY FILES
+# ===================================
+*.tmp
+*.temp
+*.bak
+*.orig
