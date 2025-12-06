@@ -253,12 +253,22 @@ function AdminDashboard() {
                                     filteredLogs.map((log) => (
                                         <Tr key={log.id} _hover={{ bg: "#f8f9fa" }}>
                                             <Td>
-                                                <Image
-                                                    src={log.photo_url ? `${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}${log.photo_url}` : "https://via.placeholder.com/40"}
-                                                    boxSize="40px"
-                                                    borderRadius="full"
-                                                    objectFit="cover"
-                                                />
+                                                {log.photo_url ? (
+                                                    <AuthenticatedImage
+                                                        filename={log.photo_url.split('/').pop()}
+                                                        boxSize="40px"
+                                                        borderRadius="full"
+                                                        objectFit="cover"
+                                                        fallbackSrc="https://via.placeholder.com/40"
+                                                    />
+                                                ) : (
+                                                    <Image
+                                                        src="https://via.placeholder.com/40"
+                                                        boxSize="40px"
+                                                        borderRadius="full"
+                                                        objectFit="cover"
+                                                    />
+                                                )}
                                             </Td>
                                             <Td>
                                                 <Text fontWeight="500" color="#202124">{log.full_name}</Text>

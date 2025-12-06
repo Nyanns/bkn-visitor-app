@@ -4,15 +4,14 @@ import {
     Box, Image, Heading, Text, Badge, VStack, HStack, Flex
 } from '@chakra-ui/react';
 import { FaIdCard, FaBuilding } from 'react-icons/fa';
+import AuthenticatedImage from './AuthenticatedImage';
 
 function VisitorCard({ data }) {
     if (!data) return null;
 
-    const getPhotoUrl = (path) => {
-        if (!path) return "https://via.placeholder.com/150";
-        const filename = path.split(/[/\\]/).pop();
-        const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
-        return `${API_URL}/uploads/${filename}`;
+    const getFilename = (path) => {
+        if (!path) return null;
+        return path.split(/[/\\]/).pop();
     };
 
     return (
@@ -32,16 +31,16 @@ function VisitorCard({ data }) {
             {/* Profile Content */}
             <Box textAlign="center" mt="-50px" pb={6} px={6}>
                 {/* Photo */}
-                <Image
+                <AuthenticatedImage
+                    filename={getFilename(data.photo_path)}
                     borderRadius="full"
                     boxSize="100px"
-                    src={getPhotoUrl(data.photo_path)}
-                    alt="Foto Profil"
                     border="4px solid white"
                     boxShadow="0 4px 12px rgba(0,0,0,0.15)"
                     objectFit="cover"
                     bg="#f8f9fa"
                     mx="auto"
+                    fallbackSrc="https://via.placeholder.com/150"
                 />
 
                 {/* Info */}
