@@ -9,6 +9,8 @@ import {
 import { FaUserPlus, FaBuilding, FaIdCard, FaArrowLeft, FaCamera, FaPhone } from 'react-icons/fa';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
+import SessionTimeout from '../utils/sessionTimeout';
+import { useEffect } from 'react';
 
 function AdminPage() {
     const [formData, setFormData] = useState({
@@ -28,6 +30,27 @@ function AdminPage() {
 
     const toast = useToast();
     const navigate = useNavigate();
+
+    // Session timeout setup
+    useEffect(() => {
+        const sessionTimeout = new SessionTimeout(30, () => {
+            toast({
+                title: "Sesi Berakhir",
+                description: "Anda telah logout otomatis karena tidak aktif selama 30 menit.",
+                status: "warning",
+                position: "top",
+                duration: 5000
+            });
+            localStorage.removeItem('adminToken');
+            navigate('/admin/login');
+        });
+
+        sessionTimeout.start();
+
+        return () => {
+            sessionTimeout.stop();
+        };
+    }, [navigate, toast]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
