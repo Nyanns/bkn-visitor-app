@@ -254,7 +254,7 @@ function AdminDashboard() {
                                         <Tr key={log.id} _hover={{ bg: "#f8f9fa" }}>
                                             <Td>
                                                 <Image
-                                                    src={log.photo_url ? `http://127.0.0.1:8000${log.photo_url}` : "https://via.placeholder.com/40"}
+                                                    src={log.photo_url ? `${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}${log.photo_url}` : "https://via.placeholder.com/40"}
                                                     boxSize="40px"
                                                     borderRadius="full"
                                                     objectFit="cover"

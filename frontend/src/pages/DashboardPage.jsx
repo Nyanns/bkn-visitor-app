@@ -133,7 +133,7 @@ function DashboardPage({
                                 <Avatar
                                     size="2xl"
                                     name={visitorData.full_name}
-                                    src={visitorData.photo_path ? `http://127.0.0.1:8000/${visitorData.photo_path}` : undefined}
+                                    src={`${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}/visitors/${visitorData.nik}/photo`}
                                     bg="#1a73e8"
                                     color="white"
                                     border="4px solid white"

@@ -8,6 +8,7 @@ import {
 } from '@chakra-ui/react';
 import { FaUser, FaLock } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import api from '../api';  // Import api instance
 import axios from 'axios';
 
 function AdminLoginPage() {
@@ -24,7 +25,7 @@ function AdminLoginPage() {
             formData.append('username', username);
             formData.append('password', password);
 
-            const response = await axios.post('http://127.0.0.1:8000/token', formData);
+            const response = await api.post('/token', formData);
             localStorage.setItem('adminToken', response.data.access_token);
 
             toast({ title: "Login Berhasil", status: "success", position: "top", duration: 3000, isClosable: true });
