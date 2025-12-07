@@ -94,7 +94,7 @@ app.add_middleware(
     CORSMiddleware, 
     allow_origins=ALLOWED_ORIGINS, 
     allow_credentials=True, 
-    allow_methods=["GET", "POST"], 
+    allow_methods=["*"], 
     allow_headers=["*"]
 )
 
@@ -461,7 +461,7 @@ def get_visitor(nik: str, db: Session = Depends(get_db)):
         models.VisitLog.visitor_nik == nik, models.VisitLog.visit_date == now_jkt.date(),
         models.VisitLog.check_out_time == None
     ).first()
-    return {"nik": visitor.nik, "full_name": visitor.full_name, "institution": visitor.institution,
+    return {"nik": visitor.nik, "full_name": visitor.full_name, "institution": visitor.institution, "phone": visitor.phone,
             "photo_path": visitor.photo_path, "is_checked_in": active_visit is not None}
 
 @app.get("/visitors/{nik}/photo", tags=["Visitor"])
@@ -634,3 +634,61 @@ def get_uploaded_file(filename: str, current_admin: models.Admin = Depends(get_c
     
     logger.info(f"File access: {filename} by admin {current_admin.username}")
     return FileResponse(file_path, media_type=media_type, headers=headers)
+
+# UPDATE Visitor
+@app.put("/visitors/{nik}", tags=["Admin"])
+def update_visitor(
+    nik: str, 
+    full_name: str = Form(...), 
+    institution: str = Form(...), 
+    phone: str = Form(None),
+    current_admin: models.Admin = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    visitor = db.query(models.Visitor).filter(models.Visitor.nik == nik).first()
+    if not visitor:
+        raise HTTPException(status_code=404, detail="Visitor not found")
+    
+    visitor.full_name = full_name
+    visitor.institution = institution
+    visitor.phone = phone
+    
+    db.commit()
+    return {"status": "success", "message": "Data berhasil diperbarui"}
+
+# DELETE Visitor
+@app.delete("/visitors/{nik}", tags=["Admin"])
+def delete_visitor(
+    nik: str, 
+    current_admin: models.Admin = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    visitor = db.query(models.Visitor).filter(models.Visitor.nik == nik).first()
+    if not visitor:
+        raise HTTPException(status_code=404, detail="Visitor not found")
+    
+    # Hapus log kunjungan terkait terlebih dahulu (Cascade delete manual)
+    db.query(models.VisitLog).filter(models.VisitLog.visitor_nik == nik).delete()
+    
+    # Hapus file foto fisik jika ada
+    if visitor.photo_path and os.path.exists(visitor.photo_path):
+        try:
+            os.remove(visitor.photo_path)
+        except OSError:
+            pass
+            
+    if visitor.ktp_path and os.path.exists(visitor.ktp_path):
+        try:
+            os.remove(visitor.ktp_path)
+        except OSError:
+            pass
+
+    if visitor.task_letter_path and os.path.exists(visitor.task_letter_path):
+        try:
+            os.remove(visitor.task_letter_path)
+        except OSError:
+            pass
+        
+    db.delete(visitor)
+    db.commit()
+    return {"status": "success", "message": "Data pengunjung berhasil dihapus"}
