@@ -530,6 +530,13 @@ pip install -r requirements.txt --force-reinstall
 
 ## 📝 Changelog
 
+### v1.2.0 (December 2025) - Antigravity UI Update 🌌
+#### Added
+- ✅ **Physics-based Landing Page**: Interactive "Antigravity" elements with floating Google shapes using `Framer Motion`.
+- ✅ **Clean Dashboard Overhaul**: Simplified User Dashboard with Google Material Design and optimized UX.
+- ✅ **Shared Physics Component**: Reusable `AntigravityBackground.jsx` for consistent visual effects.
+- ✅ **Tactile Interactions**: Large, responsive action buttons for Check-in/Check-out.
+
 ### v1.1.0 (December 2025) - Analytics & FAANG UI
 #### Added
 - ✅ **Advanced Analytics Dashboard**:
