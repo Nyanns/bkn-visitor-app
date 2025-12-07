@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from pydantic import BaseModel
 import bcrypt
 from jose import JWTError, jwt
@@ -209,7 +210,7 @@ def health_check(db: Session = Depends(get_db)):
     """
     try:
         # Check database connectivity
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         
         return {
             "status": "healthy",
