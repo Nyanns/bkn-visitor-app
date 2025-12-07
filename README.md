@@ -527,6 +527,13 @@ pip install -r requirements.txt --force-reinstall
 
 ## 📝 Changelog
 
+### v1.0.1 (December 2025) - UI Enhancements
+#### Updated
+- ✅ Replaced generic logo with official **BKN Logo**
+- ✅ Optimized **Dashboard Header** for mobile devices (responsive layout)
+- ✅ Fixed text alignment and typography for agency branding
+- ✅ Fixed duplicate attributes in dashboard components
+
 ### v1.0.0 (December 2025) - Production Ready
 #### Added
 - ✅ Database connection pooling (pool=10, overflow=20)
@@ -595,8 +602,8 @@ This project is proprietary software developed for **BKN (Badan Kepegawaian Nega
 **Repository**: [github.com/Nyanns/bkn-visitor-app](https://github.com/Nyanns/bkn-visitor-app)  
 **Status**: ✅ **Production Ready**  
 **Overall Score**: **8.6/10 (Grade A-)**  
-**Last Updated**: December 6, 2025  
-**Version**: 1.0.0
+**Last Updated**: December 7, 2025  
+**Version**: 1.0.1
 
 ### Scoring Breakdown
 | Category | Score | Status |
