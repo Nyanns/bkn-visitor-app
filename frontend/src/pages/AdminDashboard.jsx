@@ -8,7 +8,7 @@ import {
     IconButton, Stat, StatLabel, StatNumber, StatHelpText, SimpleGrid, Skeleton, SkeletonCircle, SkeletonText,
     Avatar
 } from '@chakra-ui/react';
-import { FaSearch, FaSync, FaUserPlus, FaSignOutAlt, FaFileExcel, FaUsers, FaUserCheck, FaCalendarAlt, FaEdit, FaCheckCircle, FaClock } from 'react-icons/fa';
+import { FaSearch, FaSync, FaUserPlus, FaSignOutAlt, FaFileExcel, FaUsers, FaUserCheck, FaCalendarAlt, FaEdit, FaCheckCircle, FaClock, FaChartLine } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import AuthenticatedImage from '../components/AuthenticatedImage';
@@ -98,14 +98,19 @@ function AdminDashboard() {
     );
 
     // Stats calculations - ONLY TODAY
-    const todayDate = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    const todayISO = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const today = new Date();
+    const todayDate = today.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-    const todayLogs = logs.filter(log => {
-        if (!log.check_in_time) return false;
-        const logDate = new Date(log.check_in_time).toISOString().split('T')[0];
-        return logDate === todayISO;
-    });
+    // Fix: Compare dates based on LOCAL time, not UTC
+    const checkIsToday = (dateString) => {
+        if (!dateString) return false;
+        const date = new Date(dateString);
+        return date.getDate() === today.getDate() &&
+            date.getMonth() === today.getMonth() &&
+            date.getFullYear() === today.getFullYear();
+    };
+
+    const todayLogs = logs.filter(log => checkIsToday(log.check_in_time));
 
     const totalVisitors = todayLogs.length;
     const activeVisitors = todayLogs.filter(log => log.status === "Sedang Berkunjung").length;
@@ -187,17 +192,30 @@ function AdminDashboard() {
                             Pantau aktivitas kunjungan hari ini, <b>{todayDate}</b>
                         </Text>
                     </Box>
-                    <Button
-                        leftIcon={<FaFileExcel />}
-                        variant="outline"
-                        colorScheme="green"
-                        size="md"
-                        borderRadius="md"
-                        onClick={handleExportExcel}
-                        fontWeight="500"
-                    >
-                        Export Laporan Excel
-                    </Button>
+                    <HStack spacing={2}>
+                        <Button
+                            leftIcon={<FaChartLine />}
+                            variant="outline"
+                            colorScheme="purple"
+                            size="md"
+                            borderRadius="md"
+                            onClick={() => navigate('/admin/analytics')}
+                            fontWeight="500"
+                        >
+                            Analytics
+                        </Button>
+                        <Button
+                            leftIcon={<FaFileExcel />}
+                            variant="outline"
+                            colorScheme="green"
+                            size="md"
+                            borderRadius="md"
+                            onClick={handleExportExcel}
+                            fontWeight="500"
+                        >
+                            Export Laporan Excel
+                        </Button>
+                    </HStack>
                 </Flex>
 
                 {/* Statistics Cards - High Visual Impact */}

@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import text, func, extract, desc, cast, Date
 from pydantic import BaseModel
 import bcrypt
 from jose import JWTError, jwt
@@ -692,3 +692,63 @@ def delete_visitor(
     db.delete(visitor)
     db.commit()
     return {"status": "success", "message": "Data pengunjung berhasil dihapus"}
+
+# --- 7. ANALYTICS ENDPOINT ---
+@app.get("/analytics/dashboard", dependencies=[Depends(get_current_admin)])
+def get_analytics(db: Session = Depends(get_db)):
+    """
+    Get aggregated data for analytics dashboard.
+    """
+    # 1. Heatmap: Visits by Hour
+    # Group by hour of check_in_time
+    hourly_stats = db.query(
+        extract('hour', models.VisitLog.check_in_time).label('hour'),
+        func.count(models.VisitLog.id).label('count')
+    ).group_by('hour').all()
+    
+    # Format: 0-23 array
+    heatmap_data = [{"hour": int(h), "count": c} for h, c in hourly_stats]
+    
+    # Fill missing hours with 0
+    full_heatmap = []
+    hour_map = {item['hour']: item['count'] for item in heatmap_data}
+    for i in range(24):
+        full_heatmap.append({"hour": i, "count": hour_map.get(i, 0)})
+
+    # 2. Monthly Trend (Last 30 Days)
+    thirty_days_ago = datetime.now() - timedelta(days=30)
+    daily_stats = db.query(
+        cast(models.VisitLog.check_in_time, Date).label('date'),
+        func.count(models.VisitLog.id).label('count')
+    ).filter(models.VisitLog.check_in_time >= thirty_days_ago)\
+    .group_by('date').order_by('date').all()
+    
+    trend_data = [{"date": str(d), "count": c} for d, c in daily_stats]
+
+    # 3. Top Institutions
+    top_institutions = db.query(
+        models.Visitor.institution,
+        func.count(models.Visitor.nik).label('count')
+    ).join(models.VisitLog, models.Visitor.nik == models.VisitLog.visitor_nik)\
+    .group_by(models.Visitor.institution)\
+    .order_by(desc('count'))\
+    .limit(5).all()
+    
+    institution_data = [{"name": inst, "count": c} for inst, c in top_institutions]
+
+    # 4. Summary Cards
+    total_visits = db.query(func.count(models.VisitLog.id)).scalar()
+    
+    today = datetime.now().date()
+    visits_today = db.query(func.count(models.VisitLog.id))\
+        .filter(func.date(models.VisitLog.check_in_time) == today).scalar()
+
+    return {
+        "heatmap": full_heatmap,
+        "trend": trend_data,
+        "institutions": institution_data,
+        "summary": {
+            "total_visits": total_visits,
+            "visits_today": visits_today
+        }
+    }
