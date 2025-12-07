@@ -190,3 +190,5 @@
 2025-12-07 09:31:54 | INFO | File access: c5c4c7c9-a3bf-4b94-84dc-b673878d22b7.jpg by admin sandi
 2025-12-07 09:31:54 | INFO | File access: 2839d959-3e24-44c8-bb4a-6be9362ea0af.jpg by admin sandi
 2025-12-07 09:33:26 | INFO | Successful login: panda from 127.0.0.1
+2025-12-07 16:27:01 | ERROR | Health check failed: Textual SQL expression 'SELECT 1' should be explicitly declared as text('SELECT 1')
+2025-12-07 16:28:03 | ERROR | Health check failed: Textual SQL expression 'SELECT 1' should be explicitly declared as text('SELECT 1')
