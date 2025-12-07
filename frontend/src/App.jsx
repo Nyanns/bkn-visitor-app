@@ -122,62 +122,58 @@ function App() {
   };
 
   return (
-    <Box bg="gray.50" minH="100vh" py={10} display="flex" alignItems="center">
-      <Container maxW="md" centerContent>
-        <Suspense fallback={
-          <Center w="full" minH="400px">
-            <Spinner size="xl" color="blue.500" thickness="4px" />
-          </Center>
-        }>
-          {/* Render Halaman Berdasarkan Mode */}
-          {viewMode === 'login' ? (
-            <LoginPage
-              nik={nik}
-              setNik={setNik}
-              handleLogin={handleLogin}
-              loading={loading}
-            />
-          ) : (
-            <DashboardPage
-              visitorData={visitorData}
-              handleBack={handleBack}
-              handleCheckIn={handleCheckIn}
-              handleCheckOut={confirmCheckOut}
-              checkInStatus={checkInStatus}
-              loading={loading}
-            />
-          )}
-        </Suspense>
+    <Suspense fallback={
+      <Center w="full" minH="100vh">
+        <Spinner size="xl" color="blue.500" thickness="4px" />
+      </Center>
+    }>
+      {/* Render Halaman Berdasarkan Mode */}
+      {viewMode === 'login' ? (
+        <LoginPage
+          nik={nik}
+          setNik={setNik}
+          handleLogin={handleLogin}
+          loading={loading}
+        />
+      ) : (
+        <DashboardPage
+          visitorData={visitorData}
+          handleBack={handleBack}
+          handleCheckIn={handleCheckIn}
+          handleCheckOut={confirmCheckOut}
+          checkInStatus={checkInStatus}
+          loading={loading}
+        />
+      )}
 
-        {/* Check-Out Confirmation Dialog */}
-        <AlertDialog
-          isOpen={isCheckOutDialogOpen}
-          leastDestructiveRef={cancelRef}
-          onClose={() => setIsCheckOutDialogOpen(false)}
-        >
-          <AlertDialogOverlay>
-            <AlertDialogContent>
-              <AlertDialogHeader fontSize="lg" fontWeight="bold">
-                Konfirmasi Check-Out
-              </AlertDialogHeader>
+      {/* Check-Out Confirmation Dialog */}
+      <AlertDialog
+        isOpen={isCheckOutDialogOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={() => setIsCheckOutDialogOpen(false)}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Konfirmasi Check-Out
+            </AlertDialogHeader>
 
-              <AlertDialogBody>
-                Apakah Anda yakin ingin check-out? Anda akan kembali ke halaman login.
-              </AlertDialogBody>
+            <AlertDialogBody>
+              Apakah Anda yakin ingin check-out? Anda akan kembali ke halaman login.
+            </AlertDialogBody>
 
-              <AlertDialogFooter>
-                <Button ref={cancelRef} onClick={() => setIsCheckOutDialogOpen(false)}>
-                  Batal
-                </Button>
-                <Button colorScheme="red" onClick={handleCheckOut} ml={3} isLoading={loading}>
-                  Ya, Check-Out
-                </Button>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialogOverlay>
-        </AlertDialog>
-      </Container>
-    </Box>
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={() => setIsCheckOutDialogOpen(false)}>
+                Batal
+              </Button>
+              <Button colorScheme="red" onClick={handleCheckOut} ml={3} isLoading={loading}>
+                Ya, Check-Out
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
+    </Suspense>
   );
 }
 
