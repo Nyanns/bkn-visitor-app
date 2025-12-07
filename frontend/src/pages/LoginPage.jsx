@@ -1,244 +1,134 @@
 // File: frontend/src/pages/LoginPage.jsx
-// Split-screen Google Material Design (Based on Wireframe)
+// Google Antigravity Style - Clean, Playful, Physics-based
 import { useRef, useEffect } from 'react';
 import {
-    Box, Button, FormControl, Input,
-    Heading, VStack, Text, Image, Flex, Grid
+    Box, Button, FormControl, Input, Heading, VStack, Text, Image, Flex,
+    Icon, InputGroup, InputLeftElement
 } from '@chakra-ui/react';
+import { useMotionValue } from 'framer-motion';
+import { FaUser, FaArrowRight } from 'react-icons/fa';
 import bknLogo from '../assets/Logo_Badan_Kepegawaian_Negara.png';
+import AntigravityBackground from '../components/AntigravityBackground';
 
 function LoginPage({ nik, setNik, handleLogin, loading }) {
     const nikInputRef = useRef(null);
+    const mouseX = useMotionValue(0);
+    const mouseY = useMotionValue(0);
 
-    // Auto-focus on mount
+    // Track mouse
     useEffect(() => {
-        if (nikInputRef.current) {
-            nikInputRef.current.focus();
-        }
+        const handleMove = (e) => {
+            mouseX.set(e.clientX);
+            mouseY.set(e.clientY);
+        };
+        window.addEventListener('mousemove', handleMove);
+        return () => window.removeEventListener('mousemove', handleMove);
+    }, [mouseX, mouseY]);
+
+    // Focus input
+    useEffect(() => {
+        if (nikInputRef.current) nikInputRef.current.focus();
     }, []);
 
     const handleNikChange = (e) => {
         const value = e.target.value;
-        if (/^\d*$/.test(value)) {
-            setNik(value);
-        }
+        if (/^\d*$/.test(value)) setNik(value);
     };
 
     return (
         <Flex
-            minH="100vh"
-            align="center"
-            justify="center"
-            bg="#f5f5f5"
-            p={4}
-            direction="column"
-            gap={4}
+            w="100vw"
+            h="100vh"
+            bg="white"
+            overflow="hidden"
+            position="relative"
+            fontFamily="'Google Sans', 'Inter', sans-serif"
         >
-            {/* Main Container - Split Screen */}
+            {/* --- ANTIGRAVITY PLAYGROUND (LEFT/FULL) --- */}
             <Box
-                bg="white"
-                borderRadius="12px"
-                boxShadow="0 2px 4px rgba(0,0,0,.1), 0 8px 16px rgba(0,0,0,.1)"
+                flex="1.5"
+                position="relative"
+                display={{ base: "none", lg: "block" }}
                 overflow="hidden"
-                maxW="640px"
-                w="full"
+                bg="#f8f9fa"
             >
-                <Grid
-                    templateColumns={{ base: "2fr", md: "2fr 2fr" }}
-                    minH={{ base: "auto", md: "600px" }}
-                >
-                    {/* LEFT PANEL - Branding */}
-                    <Flex
-                        bg="#fafafa"
-                        borderRight={{ base: "none", md: "1px solid #e0e0e0" }}
-                        borderBottom={{ base: "1px solid #e0e0e0", md: "none" }}
-                        direction="column"
-                        align={{ base: "center", md: "flex-start" }} // Center on mobile
-                        justify="center"
-                        p={{ base: 6, md: 8 }}
-                        position="relative"
-                    >
-                        <VStack spacing={6} align={{ base: "center", md: "flex-start" }} w="full"> {/* Center stack on mobile */}
-                            {/* BKN Logo */}
-                            <Image
-                                src={bknLogo}
-                                alt="Logo BKN"
-                                w={{ base: "90px", md: "120px" }}
-                                h="auto"
-                                objectFit="contain"
-                                alignSelf={{ base: "center", md: "flex-start" }} // Center logo on mobile
-                            />
-
-                            {/* Title */}
-                            <VStack spacing={0} align={{ base: "center", md: "flex-start" }} lineHeight="1.2"> {/* Center text stack on mobile */}
-                                <Heading
-                                    fontSize={{ base: "40px", md: "28px" }}
-                                    fontWeight="700"
-                                    color="#202124"
-                                    fontFamily="'Google Sans', 'Roboto', sans-serif"
-                                    letterSpacing="-0.5px"
-                                    mb={2}
-                                >
-                                    INTIKAMI
-                                </Heading>
-                                <Heading
-                                    fontSize={{ base: "40px", md: "24px" }}
-                                    fontWeight="400"
-                                    color="#5f6368"
-                                    fontFamily="'Google Sans', 'Roboto', sans-serif"
-                                >
-                                    DATA
-                                </Heading>
-                                <Heading
-                                    fontSize={{ base: "40px", md: "24px" }}
-                                    fontWeight="400"
-                                    color="#5f6368"
-                                    fontFamily="'Google Sans', 'Roboto', sans-serif"
-                                >
-                                    CENTER
-                                </Heading>
-                                <Heading
-                                    fontSize={{ base: "40px", md: "24px" }}
-                                    fontWeight="400"
-                                    color="#5f6368"
-                                    fontFamily="'Google Sans', 'Roboto', sans-serif"
-                                >
-                                    VISITOR
-                                </Heading>
-                                <Heading
-                                    fontSize={{ base: "40px", md: "24px" }}
-                                    fontWeight="400"
-                                    color="#5f6368"
-                                    fontFamily="'Google Sans', 'Roboto', sans-serif"
-                                >
-                                    SYSTEM
-                                </Heading>
-                            </VStack>
-
-                            {/* Welcome Message */}
-                            <Text
-                                color="#5f6368"
-                                fontSize={{ base: "16px", md: "14px" }}
-                                textAlign={{ base: "center", md: "left" }} // Center text on mobile
-                                mt={4}
-                                maxW="175px"
-                                lineHeight="1.5"
-                            >
-                                Selamat datang di Data Center BKN ...
-                            </Text>
-                        </VStack>
-                    </Flex>
-
-                    {/* RIGHT PANEL - Login Form */}
-                    <Flex
-                        direction="column"
-                        align="center"
-                        justify="center"
-                        p={{ base: 6, md: 8 }}
-                    >
-                        <VStack spacing={6} w="full" maxW="360px">
-                            {/* Login Title */}
-                            <Heading
-                                fontSize={{ base: "40px", md: "24px" }}
-                                fontWeight="400"
-                                color="#202124"
-                                fontFamily="'Google Sans', 'Roboto', sans-serif"
-                                alignSelf="flex-start"
-                            >
-                                Log In
-                            </Heading>
-
-                            {/* Form */}
-                            <VStack spacing={5} w="full">
-                                <FormControl>
-                                    <Text
-                                        fontSize="12px"
-                                        color="#5f6368"
-                                        mb={2}
-                                        fontWeight="500"
-                                    >
-                                        NIK / NIP
-                                    </Text>
-                                    <Input
-                                        ref={nikInputRef}
-                                        h="48px"
-                                        value={nik}
-                                        onChange={handleNikChange}
-                                        placeholder="NIK 16 digit atau NIP anda"
-                                        border="1px solid #dadce0"
-                                        borderRadius="4px"
-                                        bg="white"
-                                        _hover={{
-                                            borderColor: "#202124",
-                                            boxShadow: "0 1px 2px rgba(0,0,0,0.1)"
-                                        }}
-                                        _focus={{
-                                            borderColor: "#1a73e8",
-                                            borderWidth: "2px",
-                                            boxShadow: "none",
-                                            outline: "none"
-                                        }}
-                                        fontSize="16px"
-                                        px={3}
-                                        inputMode="numeric"
-                                        onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-                                    />
-                                </FormControl>
-
-                                {/* Log In Button */}
-                                <Button
-                                    w="full"
-                                    h="48px"
-                                    bg="#1a73e8"
-                                    color="white"
-                                    borderRadius="4px"
-                                    fontSize="14px"
-                                    fontWeight="500"
-                                    textTransform="none"
-                                    letterSpacing="0.25px"
-                                    _hover={{
-                                        bg: "#1557b0",
-                                        boxShadow: "0 1px 2px rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15)"
-                                    }}
-                                    _active={{ bg: "#174ea6" }}
-                                    onClick={handleLogin}
-                                    isLoading={loading}
-                                    mt={2}
-                                >
-                                    Log In
-                                </Button>
-
-                                {/* Help Text */}
-                                <Text
-                                    color="#5f6368"
-                                    fontSize="13px"
-                                    textAlign="center"
-                                    mt={2}
-                                >
-                                    Belum terdaftar? Hubungi resepsionis
-                                </Text>
-                            </VStack>
-                        </VStack>
-                    </Flex>
-                </Grid>
+                <AntigravityBackground mouseX={mouseX} mouseY={mouseY} />
             </Box>
 
-            {/* Footer - Outside the box */}
+            {/* --- CLEAN LOGIN FORM (RIGHT) --- */}
             <Flex
-                maxW="640px"
-                w="full"
-                justify="space-between"
-                px={4}
-                direction={{ base: "column", md: "row" }} // Stack footer on mobile
-                gap={{ base: 2, md: 0 }}
-                align={{ base: "center", md: "flex-start" }}
+                flex="1"
+                align="center"
+                justify="center"
+                bg="white"
+                zIndex={10}
+                boxShadow={{ lg: "-20px 0 50px rgba(0,0,0,0.05)" }}
+                p={8}
             >
-                <Text color="#5f6368" fontSize="11px">
-                    © 2025 BKN - Direktorat INTIKAMI
-                </Text>
-                <Text color="#5f6368" fontSize="11px">
-                    Data Center Visitor System v1.0.0
-                </Text>
+                <VStack spacing={8} w="full" maxW="400px" align="start">
+                    <Box>
+                        <Image src={bknLogo} h="48px" mb={6} />
+                        <Heading size="xl" color="#202124" fontWeight="700">
+                            Selamat Datang
+                        </Heading>
+                        <Text color="#5f6368" mt={2} fontSize="lg">
+                            Silakan check-in untuk memulai kunjungan.
+                        </Text>
+                    </Box>
+
+                    <FormControl>
+                        <VStack spacing={4} align="stretch">
+                            <InputGroup size="lg">
+                                <InputLeftElement pointerEvents="none" children={<Icon as={FaUser} color="gray.400" />} />
+                                <Input
+                                    ref={nikInputRef}
+                                    value={nik}
+                                    onChange={handleNikChange}
+                                    placeholder="Nomor Identitas (NIK/NIP)"
+                                    bg="#f8f9fa"
+                                    border="1px solid transparent"
+                                    _hover={{ bg: "#f1f3f4" }}
+                                    _focus={{
+                                        bg: "white",
+                                        borderColor: "#1a73e8",
+                                        boxShadow: "0 0 0 4px rgba(66, 133, 244, 0.1)"
+                                    }}
+                                    borderRadius="8px"
+                                    fontSize="md"
+                                    onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                                    autoComplete="off"
+                                    inputMode="numeric"
+                                    h="56px" // Taller input
+                                />
+                            </InputGroup>
+
+                            <Button
+                                h="56px" // Matching height
+                                bg="#1a73e8"
+                                color="white"
+                                _hover={{
+                                    bg: "#1557b0",
+                                    boxShadow: "0 4px 12px rgba(26,115,232,0.3)",
+                                    transform: "translateY(-1px)"
+                                }}
+                                _active={{ bg: "#174ea6", transform: "translateY(0)" }}
+                                onClick={handleLogin}
+                                isLoading={loading}
+                                borderRadius="30px" // Pill shape
+                                fontSize="md"
+                                fontWeight="600"
+                                rightIcon={<FaArrowRight />}
+                                width="full"
+                            >
+                                Check In
+                            </Button>
+                        </VStack>
+                    </FormControl>
+
+                    <Text fontSize="xs" color="#9aa0a6" w="full" textAlign="center" pt={8}>
+                        &copy; 2025 BKN - Direktorat INTIKAMI
+                    </Text>
+                </VStack>
             </Flex>
         </Flex>
     );

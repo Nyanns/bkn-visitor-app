@@ -234,3 +234,7 @@
 2025-12-07 23:39:17 | INFO | Successful login: panda from 127.0.0.1
 2025-12-07 23:40:44 | WARNING | Failed login attempt for user 'panda' from 127.0.0.1
 2025-12-07 23:40:50 | INFO | Successful login: panda from 127.0.0.1
+2025-12-07 23:53:54 | INFO | File access: 2839d959-3e24-44c8-bb4a-6be9362ea0af.jpg by admin panda
+2025-12-08 00:03:36 | INFO | Successful login: panda from 127.0.0.1
+2025-12-08 00:06:12 | INFO | Successful login: panda from 127.0.0.1
+2025-12-08 00:10:46 | INFO | Successful login: panda from 127.0.0.1

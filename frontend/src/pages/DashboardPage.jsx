@@ -1,10 +1,14 @@
 // File: frontend/src/pages/DashboardPage.jsx
-// Google Material Design Style - Visitor Dashboard
+// Google Material Design Style - Visitor Dashboard (Clean & Optimized)
 import { useState, useEffect } from 'react';
-import { VStack, Button, Box, Text, Image, Flex, Heading, Avatar, Badge, HStack, Container, Accordion, AccordionItem, AccordionButton, AccordionPanel, AccordionIcon, Divider, Skeleton, SkeletonCircle } from '@chakra-ui/react';
+import {
+    VStack, Button, Box, Text, Image, Flex, Heading, Avatar, Badge, HStack,
+    Container, Accordion, AccordionItem, AccordionButton, AccordionPanel,
+    AccordionIcon, Divider, Skeleton, SkeletonCircle, Icon, useColorModeValue
+} from '@chakra-ui/react';
+import { motion } from 'framer-motion';
 import { FaSignInAlt, FaSignOutAlt, FaArrowLeft, FaCheckCircle, FaClock, FaHistory } from 'react-icons/fa';
 import bknLogo from '../assets/Logo_Badan_Kepegawaian_Negara.png';
-
 import api from '../api';
 
 function DashboardPage({
@@ -32,328 +36,225 @@ function DashboardPage({
         }
     };
 
-    if (!visitorData) {
-        return (
-            <Flex minH="100vh" align="center" justify="center" bg="#f8f9fa">
-                <Container maxW="600px">
-                    <VStack spacing={6}>
-                        {/* Skeleton Header */}
-                        <VStack spacing={1}>
-                            <Skeleton height="32px" width="200px" />
-                            <Skeleton height="20px" width="250px" />
-                        </VStack>
-
-                        {/* Skeleton Card */}
-                        <Box
-                            bg="white"
-                            borderRadius="12px"
-                            boxShadow="0 1px 2px 0 rgba(60,64,67,.3)"
-                            p={6}
-                            w="full"
-                        >
-                            <VStack spacing={4}>
-                                {/* Avatar Skeleton */}
-                                <SkeletonCircle size="24" />
-
-                                {/* Name & Info Skeleton */}
-                                <VStack spacing={2}>
-                                    <Skeleton height="24px" width="180px" />
-                                    <Skeleton height="16px" width="150px" />
-                                    <Skeleton height="28px" width="140px" borderRadius="16px" />
-                                </VStack>
-                            </VStack>
-
-                            <Box h="1px" bg="#dadce0" w="full" my={6} />
-
-                            {/* Buttons Skeleton */}
-                            <VStack spacing={3}>
-                                <Skeleton height="44px" width="full" borderRadius="8px" />
-                                <Skeleton height="44px" width="full" borderRadius="8px" />
-                            </VStack>
-                        </Box>
-                    </VStack>
-                </Container>
-            </Flex>
-        );
-    }
+    if (!visitorData) return <Box bg="gray.50" minH="100vh" />;
 
     return (
-        <Box bg="#f8f9fa" minH="100vh">
-            {/* Top Bar */}
-            <Box bg="white" py={3} px={6} borderBottom="1px solid #dadce0" position="sticky" top="0" zIndex="10">
+        <Box bg="#f8f9fa" minH="100vh" fontFamily="'Google Sans', 'Inter', sans-serif">
+
+            {/* Top Navigation Bar (Clean White) */}
+            <Box
+                bg="white"
+                borderBottom="1px solid"
+                borderColor="gray.200"
+                py={3} px={{ base: 4, md: 6 }}
+                position="sticky" top={0} zIndex={20}
+            >
                 <Flex maxW="1000px" mx="auto" align="center" justify="space-between">
                     <Button
-                        variant="outline"
+                        variant="ghost"
                         leftIcon={<FaArrowLeft />}
                         onClick={handleBack}
-                        color="#3c4043"
-                        borderColor="#dadce0"
-                        bg="white"
+                        color="#5f6368"
                         size="sm"
                         _hover={{ bg: "#f1f3f4", color: "#202124" }}
-                        borderRadius="4px"
-                        px={{ base: 2, md: 4 }}
-                        fontWeight="500"
+                        borderRadius="full"
+                        px={4}
                     >
-                        <Text display={{ base: "none", md: "block" }}>Kembali</Text>
+                        Kembali
                     </Button>
-                    <HStack spacing={{ base: 2, md: 3 }}>
-                        <Image src={bknLogo} h={{ base: "28px", md: "32px" }} alt="Logo BKN" />
-                        <VStack align="end" spacing={0}>
-                            <Text fontSize={{ base: "xs", md: "sm" }} fontWeight="bold" color="#3c4043" textAlign="right">
-                                BADAN KEPEGAWAIAN NEGARA
-                            </Text>
-                            <Text fontSize={{ base: "10px", md: "xs" }} fontWeight="500" color="#5f6368" textAlign="right">
-                                Data Center Visitor System
-                            </Text>
+                    <HStack spacing={3}>
+                        <Image src={bknLogo} h="28px" alt="Logo BKN" />
+                        <VStack align="end" spacing={0} display={{ base: "none", sm: "flex" }}>
+                            <Text fontSize="xs" fontWeight="bold" color="#202124">BADAN KEPEGAWAIAN NEGARA</Text>
+                            <Text fontSize="10px" fontWeight="500" color="#5f6368">Data Center Visitor System</Text>
                         </VStack>
                     </HStack>
                 </Flex>
             </Box>
 
-            <Container maxW="1000px" py={8}>
-                <VStack spacing={6} align="stretch">
+            {/* Main Content */}
+            <Container maxW="900px" py={8}>
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                >
+                    <VStack spacing={6} align="stretch">
 
-                    {/* Main Split Card */}
-                    <Box
-                        bg="white"
-                        borderRadius="12px"
-                        boxShadow="0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15)"
-                        overflow="hidden"
-                    >
-                        <Flex direction={{ base: "column", md: "row" }}>
+                        {/* Profile & Status Card */}
+                        <Box
+                            bg="white"
+                            borderRadius="16px"
+                            boxShadow="0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06)"
+                            overflow="hidden"
+                            border="1px solid"
+                            borderColor="gray.100"
+                        >
+                            <Flex direction={{ base: "column", md: "row" }} p={{ base: 6, md: 0 }}>
+                                {/* Profile Section (Left) */}
+                                <Box w={{ base: "100%", md: "40%" }} bg={{ md: "#f8f9fa" }} p={{ md: 8 }} borderRight={{ md: "1px solid" }} borderColor={{ md: "gray.200" }}>
+                                    <VStack spacing={4} align="center">
+                                        <Box position="relative">
+                                            <Avatar
+                                                size="2xl"
+                                                name={visitorData.full_name}
+                                                src={`${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}/visitors/${visitorData.nik}/photo`}
+                                                border="4px solid white"
+                                                boxShadow="sm"
+                                            />
+                                            <Box
+                                                position="absolute"
+                                                bottom="4px" right="4px"
+                                                bg={checkInStatus ? "#34a853" : "#fbbc04"} // Google Green / Yellow
+                                                borderRadius="full"
+                                                border="3px solid white"
+                                                p="6px"
+                                            >
+                                                <Icon as={checkInStatus ? FaCheckCircle : FaClock} color="white" w={4} h={4} />
+                                            </Box>
+                                        </Box>
 
-                            {/* LEFT COLUMN: PROFILE */}
-                            <Box
-                                w={{ base: "100%", md: "40%" }}
-                                bg="#f8f9fa"
-                                p={8}
-                                borderRight={{ base: "none", md: "1px solid #dadce0" }}
-                                borderBottom={{ base: "1px solid #dadce0", md: "none" }}
-                            >
-                                <VStack spacing={6} align="start" h="full" justify="center" textAlign="left">
-                                    <Box position="relative">
-                                        <Avatar
-                                            size="2xl"
-                                            name={visitorData.full_name}
-                                            src={`${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}/visitors/${visitorData.nik}/photo`}
-                                            bg="#1a73e8"
-                                            color="white"
-                                            border="4px solid white"
-                                            boxShadow="0 2px 8px rgba(0,0,0,0.15)"
-                                            w="150px"
-                                            h="150px"
-                                        />
-                                        <Box
-                                            position="absolute"
-                                            bottom="10px"
-                                            right="10px"
-                                            bg={checkInStatus ? "#34a853" : "#fbbc04"}
-                                            border="4px solid white"
-                                            borderRadius="full"
-                                            w="32px"
-                                            h="32px"
-                                        />
-                                    </Box>
-
-                                    <VStack spacing={1} align="start">
-                                        <Heading size="md" color="#202124" fontWeight="500" fontFamily="'Google Sans', sans-serif">
-                                            {visitorData.full_name}
-                                        </Heading>
-                                        <Text color="#5f6368" fontSize="md" fontWeight="400">
-                                            {visitorData.institution}
-                                        </Text>
+                                        <VStack spacing={1}>
+                                            <Heading size="md" color="#202124" textAlign="center" fontWeight="500">
+                                                {visitorData.full_name}
+                                            </Heading>
+                                            <Text color="#5f6368" fontSize="sm">
+                                                {visitorData.institution}
+                                            </Text>
+                                        </VStack>
 
                                         <Badge
-                                            mt={3}
-                                            bg={checkInStatus ? "#e6f4ea" : "#fef7e0"}
-                                            color={checkInStatus ? "#137333" : "#b06000"}
-                                            borderRadius="16px"
-                                            px={4}
-                                            py={2}
-                                            fontSize="sm"
-                                            fontWeight="500"
-                                            textTransform="none"
-                                            border="1px solid"
-                                            borderColor={checkInStatus ? "#ceead6" : "#fef0b3"}
+                                            px={3} py={1}
+                                            borderRadius="8px"
+                                            colorScheme={checkInStatus ? "green" : "yellow"}
+                                            fontSize="xs"
+                                            textTransform="uppercase"
                                         >
-                                            <HStack spacing={2}>
-                                                {checkInStatus ? <FaCheckCircle /> : <FaClock />}
-                                                <Text>{checkInStatus ? "Status: Checked-In" : "Status: Belum Check-In"}</Text>
-                                            </HStack>
+                                            {checkInStatus ? "Checked In" : "Not Checked In"}
                                         </Badge>
                                     </VStack>
-                                </VStack>
-                            </Box>
+                                </Box>
 
-                            {/* RIGHT COLUMN: ACTIONS */}
-                            <Box w={{ base: "100%", md: "60%" }} p={8} bg="white">
-                                <VStack spacing={6} align="start" h="full" justify="center">
-                                    <VStack align="start" spacing={1} w="full">
-                                        <Heading
-                                            size="lg"
-                                            color="#202124"
-                                            fontFamily="'Google Sans', sans-serif"
-                                            fontWeight="500"
-                                            fontSize="32px"
-                                        >
-                                            Selamat Datang
-                                        </Heading>
-                                        <Text color="#5f6368" fontWeight="500" fontSize="24px">
-                                            Check-In
-                                        </Text>
-                                        <Text color="#5f6368" fontWeight="400" fontSize="24px">
-                                            Atau
-                                        </Text>
-                                        <Text color="#5f6368" fontWeight="500" fontSize="24px">
-                                            Check-Out
-                                        </Text>
+                                {/* Action Buttons (Right) */}
+                                <Box w={{ base: "100%", md: "60%" }} p={{ md: 8 }} pt={{ base: 6, md: 8 }}>
+                                    <VStack spacing={6} align="start" h="full" justify="center">
+                                        <VStack align="start" spacing={1}>
+                                            <Text fontSize="sm" fontWeight="600" color="#1a73e8" letterSpacing="0.5px">
+                                                Selamat Datang
+                                            </Text>
+                                            <Heading size="lg" color="#202124" fontWeight="400">
+                                                Check-in atau Check-out?
+                                            </Heading>
+                                        </VStack>
+
+                                        <Flex gap={4} w="full" direction={{ base: "column", sm: "row" }}>
+                                            <Button
+                                                flex={1}
+                                                h="80px"
+                                                bg={!checkInStatus ? "#1a73e8" : "gray.100"}
+                                                color={!checkInStatus ? "white" : "gray.400"}
+                                                _hover={!checkInStatus ? { bg: "#1557b0", boxShadow: "md" } : {}}
+                                                borderRadius="12px"
+                                                onClick={handleCheckIn}
+                                                isLoading={loading}
+                                                isDisabled={checkInStatus}
+                                                justifyContent="center"
+                                                fontSize="lg"
+                                                fontWeight="500"
+                                            >
+                                                <VStack spacing={1}>
+                                                    <Icon as={FaSignInAlt} />
+                                                    <Text fontSize="sm">Check In</Text>
+                                                </VStack>
+                                            </Button>
+
+                                            <Button
+                                                flex={1}
+                                                h="80px"
+                                                bg={checkInStatus ? "#ea4335" : "gray.100"}
+                                                color={checkInStatus ? "white" : "gray.400"}
+                                                _hover={checkInStatus ? { bg: "#d93025", boxShadow: "md" } : {}}
+                                                borderRadius="12px"
+                                                onClick={handleCheckOut}
+                                                isLoading={loading}
+                                                isDisabled={!checkInStatus}
+                                                justifyContent="center"
+                                                fontSize="lg"
+                                                fontWeight="500"
+                                            >
+                                                <VStack spacing={1}>
+                                                    <Icon as={FaSignOutAlt} />
+                                                    <Text fontSize="sm">Check Out</Text>
+                                                </VStack>
+                                            </Button>
+                                        </Flex>
                                     </VStack>
+                                </Box>
+                            </Flex>
+                        </Box>
 
-                                    <VStack spacing={4} w="full" pt={4}>
-                                        {/* Check-In Button */}
-                                        <Button
-                                            w="full"
-                                            h="60px"
-                                            bg="#4285f4" // Google Blue
-                                            color="white"
-                                            borderRadius="8px"
-                                            fontSize="18px"
-                                            fontWeight="500"
-                                            leftIcon={<Box as={FaSignInAlt} boxSize="24px" mr={2} />}
-                                            onClick={handleCheckIn}
-                                            isLoading={loading}
-                                            isDisabled={checkInStatus}
-                                            _hover={{ bg: "#3367d6", boxShadow: "0 2px 6px rgba(66,133,244,0.3)" }}
-                                            _active={{ bg: "#2a56c6" }}
-                                            _disabled={{ bg: "#f1f3f4", color: "#9aa0a6", cursor: "not-allowed", boxShadow: "none" }}
-                                            justifyContent="flex-start"
-                                            pl={8}
-                                        >
-                                            Check - In
-                                        </Button>
-
-                                        {/* Check-Out Button */}
-                                        <Button
-                                            w="full"
-                                            h="60px"
-                                            bg="#ea4335" // Google Red
-                                            color="white"
-                                            borderRadius="8px"
-                                            fontSize="18px"
-                                            fontWeight="500"
-                                            leftIcon={<Box as={FaSignOutAlt} boxSize="24px" mr={2} />}
-                                            onClick={handleCheckOut}
-                                            isLoading={loading}
-                                            isDisabled={!checkInStatus}
-                                            _hover={{ bg: "#d93025", boxShadow: "0 2px 6px rgba(234,67,53,0.3)" }}
-                                            _active={{ bg: "#b31412" }}
-                                            _disabled={{ bg: "#f1f3f4", color: "#9aa0a6", cursor: "not-allowed", boxShadow: "none" }}
-                                            justifyContent="flex-start"
-                                            pl={8}
-                                        >
-                                            Check - Out
-                                        </Button>
-                                    </VStack>
-                                </VStack>
-                            </Box>
-                        </Flex>
-                    </Box>
-
-                    {/* Visitor History Section */}
-                    <Box
-                        bg="white"
-                        borderRadius="8px"
-                        border="1px solid #dadce0"
-                        overflow="hidden"
-                        w="full"
-                    >
-                        <Accordion allowToggle defaultIndex={[0]}>
-                            <AccordionItem border="none">
-                                <AccordionButton _hover={{ bg: "#f8f9fa" }} py={4} px={6}>
-                                    <Box flex="1" textAlign="left">
-                                        <HStack spacing={3}>
-                                            <Box p={2} bg="#e8f0fe" borderRadius="full">
-                                                <FaHistory color="#1967d2" />
-                                            </Box>
-                                            <VStack align="start" spacing={0}>
-                                                <Text fontWeight="500" color="#202124" fontSize="md">
-                                                    Riwayat Kunjungan
-                                                </Text>
-                                                <Text fontSize="xs" color="#5f6368">
-                                                    Klik untuk melihat detail kunjungan sebelumnya
-                                                </Text>
+                        {/* Visitor History (Clean List) */}
+                        <Box
+                            bg="white"
+                            borderRadius="16px"
+                            boxShadow="0 1px 3px 0 rgba(0,0,0,0.1)"
+                            border="1px solid"
+                            borderColor="gray.100"
+                            overflow="hidden"
+                        >
+                            <Accordion allowToggle defaultIndex={[0]}>
+                                <AccordionItem border="none">
+                                    <AccordionButton py={4} px={6} _hover={{ bg: "gray.50" }}>
+                                        <Box flex="1" textAlign="left">
+                                            <HStack>
+                                                <Icon as={FaHistory} color="#5f6368" />
+                                                <Text fontWeight="500" color="#202124" fontSize="md">Riwayat Kunjungan</Text>
+                                            </HStack>
+                                        </Box>
+                                        <AccordionIcon color="gray.400" />
+                                    </AccordionButton>
+                                    <AccordionPanel pb={6} px={6}>
+                                        <Divider mb={4} borderColor="gray.100" />
+                                        {loadingHistory ? (
+                                            <VStack spacing={3}>
+                                                <Skeleton height="20px" />
+                                                <Skeleton height="20px" />
                                             </VStack>
-                                        </HStack>
-                                    </Box>
-                                    <AccordionIcon color="#5f6368" />
-                                </AccordionButton>
-                                <AccordionPanel pb={4} px={6} bg="#fff">
-                                    <Divider mb={4} borderColor="#dadce0" />
-                                    {loadingHistory ? (
-                                        <VStack spacing={3} py={2}>
-                                            {[1, 2, 3].map((i) => (
-                                                <HStack key={i} w="full" justify="space-between">
-                                                    <VStack align="start" spacing={2} flex="1">
-                                                        <Skeleton height="16px" width="120px" />
-                                                        <Skeleton height="12px" width="180px" />
-                                                    </VStack>
-                                                    <Skeleton height="24px" width="70px" borderRadius="12px" />
-                                                </HStack>
-                                            ))}
-                                        </VStack>
-                                    ) : history.length === 0 ? (
-                                        <Text fontSize="sm" color="#5f6368" textAlign="center" py={6} fontStyle="italic">
-                                            Belum ada riwayat kunjungan tercatat.
-                                        </Text>
-                                    ) : (
-                                        <VStack spacing={0} align="stretch" divider={<Divider borderColor="#f1f3f4" />}>
-                                            {history.map((visit, index) => (
-                                                <Box key={index} py={3} _hover={{ bg: "#f8f9fa" }} borderRadius="4px" px={2} transition="background 0.2s">
-                                                    <HStack justify="space-between">
-                                                        <VStack align="start" spacing={1}>
-                                                            <Text fontSize="sm" fontWeight="500" color="#202124">
-                                                                📅 {visit.date}
-                                                            </Text>
-                                                            <HStack fontSize="xs" color="#5f6368" spacing={3}>
-                                                                <Text>Masuk: {visit.check_in}</Text>
-                                                                <Text>•</Text>
-                                                                <Text>Keluar: {visit.check_out || "-"}</Text>
-                                                            </HStack>
-                                                        </VStack>
-                                                        <Badge
-                                                            bg={visit.status === "Selesai" ? "#e6f4ea" : "#fef7e0"}
-                                                            color={visit.status === "Selesai" ? "#137333" : "#b06000"}
-                                                            borderRadius="4px"
-                                                            px={2}
-                                                            py={1}
-                                                            fontSize="xs"
-                                                            fontWeight="500"
-                                                        >
-                                                            {visit.status}
-                                                        </Badge>
-                                                    </HStack>
-                                                </Box>
-                                            ))}
-                                        </VStack>
-                                    )}
-                                </AccordionPanel>
-                            </AccordionItem>
-                        </Accordion>
-                    </Box>
+                                        ) : history.length === 0 ? (
+                                            <Text textAlign="center" color="gray.500" py={4} fontSize="sm">Belum ada riwayat.</Text>
+                                        ) : (
+                                            <VStack spacing={0} align="stretch" divider={<Divider borderColor="gray.50" />}>
+                                                {history.map((visit, index) => (
+                                                    <Box key={index} py={3}>
+                                                        <Flex justify="space-between" align="center">
+                                                            <VStack align="start" spacing={0}>
+                                                                <Text fontSize="sm" fontWeight="600" color="#202124">{visit.date}</Text>
+                                                                <Text fontSize="xs" color="gray.500">{visit.check_in} - {visit.check_out || "?"}</Text>
+                                                            </VStack>
+                                                            <Badge
+                                                                colorScheme={visit.status === "Selesai" ? "green" : "yellow"}
+                                                                variant="subtle"
+                                                                fontSize="10px"
+                                                            >
+                                                                {visit.status}
+                                                            </Badge>
+                                                        </Flex>
+                                                    </Box>
+                                                ))}
+                                            </VStack>
+                                        )}
+                                    </AccordionPanel>
+                                </AccordionItem>
+                            </Accordion>
+                        </Box>
 
-                    {/* Footer Note */}
-                    <Flex w="full" justify="space-between" pt={4} px={2}>
-                        <Text fontSize="11px" color="#9aa0a6">
-                            &copy; 2025 BKN Visitor System
-                        </Text>
-                        <Text fontSize="11px" color="#9aa0a6">
-                            Direktorat INTIKAMI
-                        </Text>
-                    </Flex>
-
-                </VStack>
+                    </VStack>
+                </motion.div>
             </Container>
+
+            <Flex w="full" justify="center" py={6}>
+                <Text fontSize="11px" color="#9aa0a6">&copy; 2025 BKN - Direktorat INTIKAMI</Text>
+            </Flex>
         </Box>
     );
 }
