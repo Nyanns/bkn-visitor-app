@@ -192,3 +192,13 @@
 2025-12-07 09:33:26 | INFO | Successful login: panda from 127.0.0.1
 2025-12-07 16:27:01 | ERROR | Health check failed: Textual SQL expression 'SELECT 1' should be explicitly declared as text('SELECT 1')
 2025-12-07 16:28:03 | ERROR | Health check failed: Textual SQL expression 'SELECT 1' should be explicitly declared as text('SELECT 1')
+2025-12-07 16:43:41 | INFO | Successful login: panda from 127.0.0.1
+2025-12-07 16:43:43 | INFO | File access: c5c4c7c9-a3bf-4b94-84dc-b673878d22b7.jpg by admin panda
+2025-12-07 16:43:43 | INFO | File access: 2839d959-3e24-44c8-bb4a-6be9362ea0af.jpg by admin panda
+2025-12-07 17:28:46 | INFO | Check-in: Miku Chan (NIK: 12345) at 2025-12-07 17:28:46 WIB
+2025-12-07 17:39:40 | INFO | Check-out: Miku Chan (NIK: 12345) at 2025-12-07 17:39:40 WIB
+2025-12-07 17:44:24 | INFO | Check-in: Miku Chan (NIK: 12345) at 2025-12-07 17:44:24 WIB
+2025-12-07 17:44:42 | INFO | Check-out: Miku Chan (NIK: 12345) at 2025-12-07 17:44:42 WIB
+2025-12-07 18:02:41 | INFO | Successful login: panda from 127.0.0.1
+2025-12-07 18:02:41 | INFO | File access: 2839d959-3e24-44c8-bb4a-6be9362ea0af.jpg by admin panda
+2025-12-07 18:02:41 | INFO | File access: c5c4c7c9-a3bf-4b94-84dc-b673878d22b7.jpg by admin panda
