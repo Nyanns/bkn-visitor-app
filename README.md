@@ -28,6 +28,7 @@
 - ✅ **Excel Export** - Professional formatted reports with Jakarta timezone
 - ✅ **Visitor Registration** - Secure admin-only registration system
 - ✅ **Visitor Data Management** - Edit and Delete visitor data (CRUD)
+- ✅ **Advanced Analytics** - Heatmaps, Trend Analysis, and Top Institution metrics
 - ✅ **Session Management** - Auto-logout after 30 minutes idle (security)
 - ✅ **API Documentation** - Interactive Swagger UI & ReDoc
 
@@ -162,6 +163,7 @@ ALLOW_SETUP_ADMIN=false  # IMPORTANT: Disable after initial setup!
 | **React Router** | Routing | 7.1.1 |
 | **Axios** | HTTP Client | 1.7.9 |
 | **React Icons** | Icons | 5.4.0 |
+| **Recharts** | Data Visualization | 2.15.0 |
 | **Framer Motion** | Animations | 11.13.5 |
 
 ---
@@ -528,6 +530,19 @@ pip install -r requirements.txt --force-reinstall
 
 ## 📝 Changelog
 
+### v1.1.0 (December 2025) - Analytics & FAANG UI
+#### Added
+- ✅ **Advanced Analytics Dashboard**:
+    - Visitor Trends (Monthly Area Chart)
+    - Peak Hours Heatmap (Github-style bar chart)
+    - Top Institutions (Donut Chart)
+    - Real-time Summary Cards
+- ✅ **Admin UI Overhaul**:
+    - Glassmorphism effects
+    - Skeleton loading states
+    - FAANG-quality typography and spacing
+- ✅ **Visitor Management**: Edit and Delete functionality implemented
+
 ### v1.0.1 (December 2025) - UI Enhancements
 #### Updated
 - ✅ Replaced generic logo with official **BKN Logo**
@@ -602,9 +617,9 @@ This project is proprietary software developed for **BKN (Badan Kepegawaian Nega
 
 **Repository**: [github.com/Nyanns/bkn-visitor-app](https://github.com/Nyanns/bkn-visitor-app)  
 **Status**: ✅ **Production Ready**  
-**Overall Score**: **8.6/10 (Grade A-)**  
-**Last Updated**: December 7, 2025  
-**Version**: 1.0.1
+**Overall Score**: **8.8/10 (Grade A)**  
+**Last Updated**: December 8, 2025  
+**Version**: 1.1.0
 
 ### Scoring Breakdown
 | Category | Score | Status |
