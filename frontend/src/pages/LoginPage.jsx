@@ -44,7 +44,7 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
                 w="full"
             >
                 <Grid
-                    templateColumns={{ base: "1fr", md: "1fr 1fr" }}
+                    templateColumns={{ base: "2fr", md: "2fr 2fr" }}
                     minH={{ base: "auto", md: "600px" }}
                 >
                     {/* LEFT PANEL - Branding */}
@@ -72,7 +72,7 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
                             {/* Title */}
                             <VStack spacing={0} align={{ base: "center", md: "flex-start" }} lineHeight="1.2"> {/* Center text stack on mobile */}
                                 <Heading
-                                    fontSize={{ base: "24px", md: "28px" }}
+                                    fontSize={{ base: "40px", md: "28px" }}
                                     fontWeight="700"
                                     color="#202124"
                                     fontFamily="'Google Sans', 'Roboto', sans-serif"
@@ -82,7 +82,7 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
                                     INTIKAMI
                                 </Heading>
                                 <Heading
-                                    fontSize={{ base: "20px", md: "24px" }}
+                                    fontSize={{ base: "40px", md: "24px" }}
                                     fontWeight="400"
                                     color="#5f6368"
                                     fontFamily="'Google Sans', 'Roboto', sans-serif"
@@ -90,7 +90,7 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
                                     DATA
                                 </Heading>
                                 <Heading
-                                    fontSize={{ base: "20px", md: "24px" }}
+                                    fontSize={{ base: "40px", md: "24px" }}
                                     fontWeight="400"
                                     color="#5f6368"
                                     fontFamily="'Google Sans', 'Roboto', sans-serif"
@@ -98,7 +98,7 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
                                     CENTER
                                 </Heading>
                                 <Heading
-                                    fontSize={{ base: "20px", md: "24px" }}
+                                    fontSize={{ base: "40px", md: "24px" }}
                                     fontWeight="400"
                                     color="#5f6368"
                                     fontFamily="'Google Sans', 'Roboto', sans-serif"
@@ -106,7 +106,7 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
                                     VISITOR
                                 </Heading>
                                 <Heading
-                                    fontSize={{ base: "20px", md: "24px" }}
+                                    fontSize={{ base: "40px", md: "24px" }}
                                     fontWeight="400"
                                     color="#5f6368"
                                     fontFamily="'Google Sans', 'Roboto', sans-serif"
@@ -118,10 +118,10 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
                             {/* Welcome Message */}
                             <Text
                                 color="#5f6368"
-                                fontSize={{ base: "13px", md: "14px" }}
+                                fontSize={{ base: "16px", md: "14px" }}
                                 textAlign={{ base: "center", md: "left" }} // Center text on mobile
                                 mt={4}
-                                maxW="200px"
+                                maxW="175px"
                                 lineHeight="1.5"
                             >
                                 Selamat datang di Data Center BKN ...
@@ -139,7 +139,7 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
                         <VStack spacing={6} w="full" maxW="360px">
                             {/* Login Title */}
                             <Heading
-                                fontSize={{ base: "20px", md: "24px" }}
+                                fontSize={{ base: "40px", md: "24px" }}
                                 fontWeight="400"
                                 color="#202124"
                                 fontFamily="'Google Sans', 'Roboto', sans-serif"
