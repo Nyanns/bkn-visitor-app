@@ -9,6 +9,7 @@ import App from './App.jsx'
 const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage.jsx'))
 const AdminPage = lazy(() => import('./pages/AdminPage.jsx'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard.jsx'))
+const AdminVisitorDetail = lazy(() => import('./pages/AdminVisitorDetail.jsx'))
 const ProtectedRoute = lazy(() => import('./components/ProtectedRoute.jsx'))
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -37,6 +38,18 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="/admin/register" element={
               <ProtectedRoute>
                 <AdminPage />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/admin/visitor/:nik" element={
+              <ProtectedRoute>
+                <AdminVisitorDetail />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/admin/visitor/:nik" element={
+              <ProtectedRoute>
+                <AdminVisitorDetail />
               </ProtectedRoute>
             } />
 

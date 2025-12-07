@@ -7,11 +7,12 @@ import {
     InputLeftElement, useToast, Spinner, Center, Flex, VStack,
     IconButton, Stat, StatLabel, StatNumber, StatHelpText, SimpleGrid, Skeleton, SkeletonCircle, SkeletonText
 } from '@chakra-ui/react';
-import { FaSearch, FaSync, FaUserPlus, FaSignOutAlt, FaFileExcel, FaUsers, FaUserCheck, FaCalendarAlt } from 'react-icons/fa';
+import { FaSearch, FaSync, FaUserPlus, FaSignOutAlt, FaFileExcel, FaUsers, FaUserCheck, FaCalendarAlt, FaEdit } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import AuthenticatedImage from '../components/AuthenticatedImage';
 import SessionTimeout from '../utils/sessionTimeout';
+import bknLogo from '../assets/Logo_Badan_Kepegawaian_Negara.png';
 
 function AdminDashboard() {
     const [logs, setLogs] = useState([]);
@@ -122,17 +123,7 @@ function AdminDashboard() {
             >
                 <Flex justify="space-between" align="center" maxW="1400px" mx="auto">
                     <HStack spacing={3}>
-                        <Box
-                            w="40px"
-                            h="40px"
-                            bg="#1a73e8"
-                            borderRadius="8px"
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                        >
-                            <FaUsers color="white" />
-                        </Box>
+                        <Image src={bknLogo} h="40px" alt="Logo BKN" />
                         <VStack align="start" spacing={0}>
                             <Heading size="sm" color="#202124" fontWeight="500">
                                 Dashboard Monitoring
@@ -250,6 +241,7 @@ function AdminDashboard() {
                                     <Th color="#5f6368" fontSize="xs" fontWeight="500">MASUK</Th>
                                     <Th color="#5f6368" fontSize="xs" fontWeight="500">KELUAR</Th>
                                     <Th color="#5f6368" fontSize="xs" fontWeight="500">STATUS</Th>
+                                    <Th color="#5f6368" fontSize="xs" fontWeight="500">AKSI</Th>
                                 </Tr>
                             </Thead>
                             <Tbody>
@@ -276,7 +268,7 @@ function AdminDashboard() {
                                             <Td>
                                                 {log.photo_url ? (
                                                     <AuthenticatedImage
-                                                        filename={log.photo_url.split('/').pop()}
+                                                        filename={log.photo_url.split(/[/\\]/).pop()}
                                                         boxSize="40px"
                                                         borderRadius="full"
                                                         objectFit="cover"
@@ -310,6 +302,17 @@ function AdminDashboard() {
                                                 >
                                                     {log.status}
                                                 </Badge>
+                                            </Td>
+                                            <Td>
+                                                <Button
+                                                    size="xs"
+                                                    leftIcon={<FaEdit />}
+                                                    colorScheme="blue"
+                                                    variant="outline"
+                                                    onClick={() => navigate(`/admin/visitor/${log.nik}`)}
+                                                >
+                                                    Detail
+                                                </Button>
                                             </Td>
                                         </Tr>
                                     ))
