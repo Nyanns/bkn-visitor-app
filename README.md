@@ -67,7 +67,24 @@
 
 ---
 
-## 🚀 Quick Start
+## ⚡ Quick Start (Easy Setup)
+
+### Windows 🪟
+1. **Clone Repository**:
+   ```bash
+   git clone https://github.com/Nyanns/bkn-visitor-app.git
+   cd bkn-visitor-app
+   ```
+2. **Run Installer**:
+   - Double-click `setup_windows.bat`
+   - Wrapper script will install Python/Node dependencies and setup `.env` automatically.
+3. **Start App**:
+   - Double-click `start_app.bat`
+
+---
+
+## 🛠️ Manual Setup
+(For Linux/Mac or Custom Configuration)
 
 ### Prerequisites
 - **Python 3.11+**
