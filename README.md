@@ -530,6 +530,13 @@ pip install -r requirements.txt --force-reinstall
 
 ## 📝 Changelog
 
+### v1.4.0 (December 8, 2025) - Real-time & Manual Checkout Update 🔄
+#### New Features
+- ✅ **Admin Manual Checkout**: Admins can now force check-out visitors who forgot to log out directly from the Dashboard or Visitor Detail page.
+- ✅ **Real-time User Dashboard**: Implemented auto-polling (5s interval) to simulate real-time status updates without manual refresh.
+- ✅ **Real-time Admin Dashboard**: Implemented safe auto-refresh (15s interval) for live visitor monitoring.
+- ✅ **Smart Status Sync**: User dashboard automatically detects admin forced checkout and redirects gracefully.
+
 ### v1.3.0 (December 8, 2025) - The "FAANG" UX Update 🎨
 #### New Features
 - ✅ **Smart Login Input**: Visual 16-digit indicator with real-time validation and green checkmark.

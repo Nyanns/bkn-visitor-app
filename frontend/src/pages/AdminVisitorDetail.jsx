@@ -13,7 +13,7 @@ import {
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     FaArrowLeft, FaTrash, FaSave, FaUser, FaBuilding, FaPhone,
-    FaHistory, FaEdit, FaCalendarAlt, FaClock
+    FaHistory, FaEdit, FaCalendarAlt, FaClock, FaSignOutAlt
 } from 'react-icons/fa';
 import api from '../api';
 import AuthenticatedImage from '../components/AuthenticatedImage';
@@ -101,6 +101,19 @@ function AdminVisitorDetail() {
             navigate('/admin/dashboard');
         } catch (error) {
             toast({ title: "Gagal menghapus data", description: error.response?.data?.detail, status: "error", position: "top" });
+        }
+    };
+
+    const handleForceCheckout = async (visitId) => {
+        try {
+            await api.put(`/admin/visits/${visitId}/checkout`);
+            toast({ title: "Berhasil check-out manual", status: "success", position: "top" });
+
+            // Refresh history
+            const historyRes = await api.get(`/visitors/${nik}/history`);
+            setHistory(historyRes.data.history || []);
+        } catch (error) {
+            toast({ title: "Gagal check-out", description: error.response?.data?.detail, status: "error", position: "top" });
         }
     };
 
@@ -332,12 +345,13 @@ function AdminVisitorDetail() {
                                                             <Th>Check In</Th>
                                                             <Th>Check Out</Th>
                                                             <Th>Status</Th>
+                                                            <Th>Action</Th>
                                                         </Tr>
                                                     </Thead>
                                                     <Tbody>
                                                         {history.length === 0 ? (
                                                             <Tr>
-                                                                <Td colSpan={4} textAlign="center" py={8} color="gray.500">
+                                                                <Td colSpan={5} textAlign="center" py={8} color="gray.500">
                                                                     No visit history found.
                                                                 </Td>
                                                             </Tr>
@@ -363,6 +377,19 @@ function AdminVisitorDetail() {
                                                                         >
                                                                             {h.check_out ? "COMPLETED" : "ACTIVE"}
                                                                         </Badge>
+                                                                    </Td>
+                                                                    <Td>
+                                                                        {!h.check_out && (
+                                                                            <Button
+                                                                                size="xs"
+                                                                                colorScheme="orange"
+                                                                                leftIcon={<FaSignOutAlt />}
+                                                                                onClick={() => handleForceCheckout(h.id)}
+                                                                                title="Manual Checkout if visitor forgot"
+                                                                            >
+                                                                                Manual Checkout
+                                                                            </Button>
+                                                                        )}
                                                                     </Td>
                                                                 </Tr>
                                                             ))

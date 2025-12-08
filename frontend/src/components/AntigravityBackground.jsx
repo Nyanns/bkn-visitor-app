@@ -23,7 +23,7 @@ const PhysicsShape = ({ mouseX, mouseY, index }) => {
     const rotate = useSpring(0, { stiffness: 50, damping: 20 });
 
     useEffect(() => {
-        const unsubscribeX = mouseX.onChange(latestX => {
+        const unsubscribeX = mouseX.on("change", latestX => {
             const rectX = (window.innerWidth * initialLeft) / 100;
             const diffX = latestX - rectX;
             // Repulse if within 300px
@@ -37,7 +37,7 @@ const PhysicsShape = ({ mouseX, mouseY, index }) => {
             }
         });
 
-        const unsubscribeY = mouseY.onChange(latestY => {
+        const unsubscribeY = mouseY.on("change", latestY => {
             const rectY = (window.innerHeight * initialTop) / 100;
             const diffY = latestY - rectY;
 
