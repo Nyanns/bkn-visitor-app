@@ -586,6 +586,7 @@ def get_visitor_history(nik: str, db: Session = Depends(get_db)):
         status = "Selesai" if log.check_out_time else "Sedang Berkunjung"
         
         history.append({
+            "id": log.id,
             "date": check_in_jkt.strftime("%d/%m/%Y") if check_in_jkt else "-",
             "check_in": check_in_jkt.strftime("%H:%M:%S") if check_in_jkt else "-",
             "check_out": check_out_jkt.strftime("%H:%M:%S") if check_out_jkt else None,
@@ -692,6 +693,34 @@ def delete_visitor(
     db.delete(visitor)
     db.commit()
     return {"status": "success", "message": "Data pengunjung berhasil dihapus"}
+
+# FORCE CHECK-OUT (Admin Manual)
+@app.put("/admin/visits/{visit_id}/checkout", tags=["Admin"])
+def force_checkout_visit(
+    visit_id: int,
+    current_admin: models.Admin = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Force check-out a visitor manually (Admin only).
+    Useful when a visitor forgets to check out.
+    """
+    visit = db.query(models.VisitLog).filter(models.VisitLog.id == visit_id).first()
+    if not visit:
+        raise HTTPException(status_code=404, detail="Data kunjungan tidak ditemukan")
+    
+    if visit.check_out_time:
+        raise HTTPException(status_code=400, detail="Pengunjung ini sudah check-out")
+
+    # Set check-out time to NOW (UTC)
+    now_jkt = datetime.now(JAKARTA_TZ)
+    now_utc = now_jkt.astimezone(pytz.UTC).replace(tzinfo=None)
+    
+    visit.check_out_time = now_utc
+    db.commit()
+    
+    logger.info(f"Force Check-out by Admin {current_admin.username}: Visit ID {visit_id} at {now_jkt}")
+    return {"status": "success", "message": "Berhasil check-out manual", "time": now_jkt.strftime("%H:%M:%S")}
 
 # --- 7. ANALYTICS ENDPOINT ---
 @app.get("/analytics/dashboard", dependencies=[Depends(get_current_admin)])
