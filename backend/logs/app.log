@@ -246,3 +246,16 @@
 2025-12-08 00:44:42 | INFO | Successful login: panda from 127.0.0.1
 2025-12-08 00:47:41 | INFO | Check-in: Hana Mahcia (NIK: 12345) at 2025-12-08 00:47:41 WIB
 2025-12-08 00:49:26 | INFO | Check-out: Hana Mahcia (NIK: 12345) at 2025-12-08 00:49:26 WIB
+2025-12-08 07:43:49 | INFO | Successful login: panda from 127.0.0.1
+2025-12-08 07:43:51 | INFO | File access: 2839d959-3e24-44c8-bb4a-6be9362ea0af.jpg by admin panda
+2025-12-08 07:43:51 | INFO | File access: 41bcef76-c4dd-4f0a-8696-d938b97c41b0.png by admin panda
+2025-12-08 07:57:49 | INFO | Successful login: panda from 127.0.0.1
+2025-12-08 08:08:27 | INFO | Excel exported by panda: Laporan_Tamu_2025-12-08.xlsx
+2025-12-08 08:08:27 | INFO | Cleaned up Excel file: backups\Laporan_Tamu_2025-12-08.xlsx
+2025-12-08 08:12:29 | INFO | File uploaded successfully: 0942c0d1-26a9-4671-969f-20ef3510caeb.png
+2025-12-08 08:12:29 | INFO | New visitor registered: Vestia Zeta (NIK: 1111111111111111) by panda
+2025-12-08 08:14:43 | INFO | Check-in: Vestia Zeta (NIK: 1111111111111111) at 2025-12-08 08:14:43 WIB
+2025-12-08 08:14:51 | INFO | File access: 0942c0d1-26a9-4671-969f-20ef3510caeb.png by admin panda
+2025-12-08 08:15:26 | INFO | Check-out: Vestia Zeta (NIK: 1111111111111111) at 2025-12-08 08:15:26 WIB
+2025-12-08 08:26:43 | INFO | Successful login: panda from 127.0.0.1
+2025-12-08 08:28:55 | INFO | Successful login: panda from 127.0.0.1

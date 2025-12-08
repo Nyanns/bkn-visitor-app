@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense, useRef } from 'react';
+import { useState, lazy, Suspense, useRef, useEffect } from 'react';
 import {
   Box, Container, useToast, Spinner, Center,
   AlertDialog, AlertDialogBody, AlertDialogFooter, AlertDialogHeader,
@@ -20,6 +20,46 @@ function App() {
   const cancelRef = useRef();
 
   const toast = useToast();
+
+  // Use ref to track status for polling to avoid dependency loops or stale closures
+  const checkInStatusRef = useRef(checkInStatus);
+  useEffect(() => {
+    checkInStatusRef.current = checkInStatus;
+  }, [checkInStatus]);
+
+  // --- AUTO-POLLING (Real-time Simulation) ---
+  useEffect(() => {
+    let intervalId;
+    if (viewMode === 'dashboard' && nik) {
+      intervalId = setInterval(async () => {
+        try {
+          // Silent background update
+          const response = await api.get(`/visitors/${nik}`);
+          const newStatus = response.data.is_checked_in;
+          const currentStatus = checkInStatusRef.current;
+
+          if (currentStatus !== newStatus) {
+            setCheckInStatus(newStatus);
+
+            // Side effect safely outside setState
+            if (currentStatus === true && newStatus === false) {
+              toast({
+                title: "Permintaan Selesai",
+                description: "Checkout diproses oleh Admin.",
+                status: "info",
+                position: "top",
+                duration: 3000
+              });
+            }
+          }
+          setVisitorData(response.data);
+        } catch (err) {
+          // Ignore silent errors
+        }
+      }, 5000); // Poll every 5 seconds
+    }
+    return () => clearInterval(intervalId);
+  }, [viewMode, nik, toast]);
 
   // --- LOGIC: LOGIN ---
   const handleLogin = async () => {
@@ -101,6 +141,13 @@ function App() {
       formData.append('nik', nik);
       await api.post('/check-out/', formData);
 
+      // IMMEDIATE UI UPDATE:
+      setCheckInStatus(false);
+
+      // Refresh visitor data to update history list (Active -> Done)
+      const visitorResponse = await api.get(`/visitors/${nik}`);
+      setVisitorData(visitorResponse.data);
+
       toast({ title: "Berhasil Keluar!", status: "success", position: "top", duration: 3000, isClosable: true });
 
       // Kembali ke login setelah 2 detik
@@ -108,7 +155,29 @@ function App() {
         handleBack();
       }, 1500);
     } catch (error) {
-      toast({ title: "Gagal Keluar", description: error.response?.data?.detail, status: "error", position: "top", duration: 3000, isClosable: true });
+      const msg = error.response?.data?.detail || "";
+      if (error.response?.status === 400 && msg.includes("Belum Check-In")) {
+        // Case: User was force checked-out by admin (or stale state).
+        // Treat as success: Update UI to "Checked Out"
+        setCheckInStatus(false);
+        const visitorResponse = await api.get(`/visitors/${nik}`);
+        setVisitorData(visitorResponse.data);
+
+        toast({
+          title: "Sesi Sudah Berakhir",
+          description: "Anda sudah tercatat check-out sebelumnya.",
+          status: "warning",
+          position: "top",
+          duration: 3000,
+          isClosable: true
+        });
+
+        setTimeout(() => {
+          handleBack();
+        }, 1500);
+      } else {
+        toast({ title: "Gagal Keluar", description: msg, status: "error", position: "top", duration: 3000, isClosable: true });
+      }
     } finally {
       setLoading(false);
     }

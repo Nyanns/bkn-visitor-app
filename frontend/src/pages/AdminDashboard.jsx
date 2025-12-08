@@ -103,8 +103,18 @@ function AdminDashboard() {
     useEffect(() => {
         fetchLogs();
 
+        // Safe Auto-Refresh (15 Seconds)
+        // Interval lebih lama dari user dashboard (5s) untuk menjaga performa
+        const intervalId = setInterval(() => {
+            // Background fetch without setting loading spinner to true
+            api.get('/admin/logs')
+                .then(res => setLogs(res.data))
+                .catch(() => { }); // Ignore errors in background
+        }, 15000);
+
         // Initialize session timeout (30 minutes idle = auto logout)
         const sessionTimeout = new SessionTimeout(30, () => {
+            // ... existing logout logic
             toast({
                 title: "Sesi Berakhir",
                 description: "Logout otomatis karena tidak aktif.",
@@ -116,7 +126,10 @@ function AdminDashboard() {
         });
 
         sessionTimeout.start();
-        return () => sessionTimeout.stop();
+        return () => {
+            sessionTimeout.stop();
+            clearInterval(intervalId);
+        };
     }, []);
 
     const handleLogout = () => {
@@ -138,6 +151,16 @@ function AdminDashboard() {
             toast({ title: "Excel berhasil diexport!", status: "success", position: "top" });
         } catch (error) {
             toast({ title: "Gagal export Excel", status: "error", position: "top" });
+        }
+    };
+
+    const handleForceCheckout = async (visitId) => {
+        try {
+            await api.put(`/admin/visits/${visitId}/checkout`);
+            toast({ title: "Berhasil check-out manual", status: "success", position: "top" });
+            fetchLogs(); // Refresh list
+        } catch (error) {
+            toast({ title: "Gagal check-out", description: error.response?.data?.detail, status: "error", position: "top" });
         }
     };
 
@@ -448,16 +471,30 @@ function AdminDashboard() {
                                                     </Badge>
                                                 </Td>
                                                 <Td pr={6} textAlign="right">
-                                                    <Button
-                                                        size="xs"
-                                                        rightIcon={<FaArrowRight />}
-                                                        variant="ghost"
-                                                        colorScheme="blue"
-                                                        color="#1a73e8"
-                                                        onClick={() => navigate(`/admin/visitor/${log.nik}`)}
-                                                    >
-                                                        Details
-                                                    </Button>
+                                                    <HStack justify="flex-end">
+                                                        {log.status === "Sedang Berkunjung" && (
+                                                            <Button
+                                                                size="xs"
+                                                                leftIcon={<FaSignOutAlt />}
+                                                                colorScheme="orange"
+                                                                variant="outline"
+                                                                onClick={() => handleForceCheckout(log.id)}
+                                                                title="Manual Checkout"
+                                                            >
+                                                                Out
+                                                            </Button>
+                                                        )}
+                                                        <Button
+                                                            size="xs"
+                                                            rightIcon={<FaArrowRight />}
+                                                            variant="ghost"
+                                                            colorScheme="blue"
+                                                            color="#1a73e8"
+                                                            onClick={() => navigate(`/admin/visitor/${log.nik}`)}
+                                                        >
+                                                            Details
+                                                        </Button>
+                                                    </HStack>
                                                 </Td>
                                             </Tr>
                                         ))
