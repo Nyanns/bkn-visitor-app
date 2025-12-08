@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import FileResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text, func, extract, desc, cast, Date
 from pydantic import BaseModel
@@ -97,6 +98,21 @@ app.add_middleware(
     allow_methods=["*"], 
     allow_headers=["*"]
 )
+
+# --- 3b. SECURE HEADERS MIDDLEWARE ---
+class SecureHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        # Basic Security Headers (Score 2/4 in Audit)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        # CSP (Permissive for Dev)
+        # response.headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
+        return response
+
+app.add_middleware(SecureHeadersMiddleware)
 
 # --- 4. SCHEMAS ---
 class StandardResponse(BaseModel):
