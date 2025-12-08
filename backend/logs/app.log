@@ -259,3 +259,36 @@
 2025-12-08 08:15:26 | INFO | Check-out: Vestia Zeta (NIK: 1111111111111111) at 2025-12-08 08:15:26 WIB
 2025-12-08 08:26:43 | INFO | Successful login: panda from 127.0.0.1
 2025-12-08 08:28:55 | INFO | Successful login: panda from 127.0.0.1
+2025-12-08 08:41:12 | INFO | Successful login: panda from 127.0.0.1
+2025-12-08 08:41:25 | INFO | Check-in: Hana Machia (NIK: 12345) at 2025-12-08 08:41:25 WIB
+2025-12-08 08:41:35 | INFO | Force Check-out by Admin panda: Visit ID 53 at 2025-12-08 08:41:34.936498+07:00
+2025-12-08 08:42:00 | INFO | Check-in: Hana Machia (NIK: 12345) at 2025-12-08 08:42:00 WIB
+2025-12-08 08:42:06 | INFO | Force Check-out by Admin panda: Visit ID 54 at 2025-12-08 08:42:06.439356+07:00
+2025-12-08 08:44:51 | INFO | Check-in: Vestia Zeta (NIK: 1111111111111111) at 2025-12-08 08:44:51 WIB
+2025-12-08 08:44:57 | INFO | File access: 2839d959-3e24-44c8-bb4a-6be9362ea0af.jpg by admin panda
+2025-12-08 08:44:57 | INFO | File access: 41bcef76-c4dd-4f0a-8696-d938b97c41b0.png by admin panda
+2025-12-08 08:45:05 | INFO | Force Check-out by Admin panda: Visit ID 55 at 2025-12-08 08:45:05.508126+07:00
+2025-12-08 08:47:41 | INFO | Check-in: Vestia Zeta (NIK: 1111111111111111) at 2025-12-08 08:47:41 WIB
+2025-12-08 08:47:50 | INFO | Force Check-out by Admin panda: Visit ID 56 at 2025-12-08 08:47:50.902444+07:00
+2025-12-08 08:52:19 | INFO | Check-in: Vestia Zeta (NIK: 1111111111111111) at 2025-12-08 08:52:19 WIB
+2025-12-08 08:52:53 | INFO | Force Check-out by Admin panda: Visit ID 57 at 2025-12-08 08:52:53.890301+07:00
+2025-12-08 08:53:05 | INFO | Check-in: Vestia Zeta (NIK: 1111111111111111) at 2025-12-08 08:53:05 WIB
+2025-12-08 08:53:17 | INFO | Force Check-out by Admin panda: Visit ID 58 at 2025-12-08 08:53:17.193986+07:00
+2025-12-08 08:53:46 | INFO | Check-in: Hana Machia (NIK: 12345) at 2025-12-08 08:53:46 WIB
+2025-12-08 08:53:57 | INFO | Force Check-out by Admin panda: Visit ID 59 at 2025-12-08 08:53:57.634156+07:00
+2025-12-08 08:56:09 | INFO | Check-in: Hana Machia (NIK: 12345) at 2025-12-08 08:56:09 WIB
+2025-12-08 08:56:17 | INFO | Force Check-out by Admin panda: Visit ID 60 at 2025-12-08 08:56:17.743231+07:00
+2025-12-08 08:56:54 | INFO | Check-in: Hana Machia (NIK: 12345) at 2025-12-08 08:56:54 WIB
+2025-12-08 08:56:55 | INFO | Check-in: Vestia Zeta (NIK: 1111111111111111) at 2025-12-08 08:56:55 WIB
+2025-12-08 08:57:53 | INFO | Check-out: Hana Machia (NIK: 12345) at 2025-12-08 08:57:53 WIB
+2025-12-08 08:58:01 | INFO | Check-out: Vestia Zeta (NIK: 1111111111111111) at 2025-12-08 08:58:01 WIB
+2025-12-08 08:59:57 | INFO | Check-in: Hana Machia (NIK: 12345) at 2025-12-08 08:59:57 WIB
+2025-12-08 09:29:03 | WARNING | Failed login attempt for user '' OR '1'='1' from 127.0.0.1
+2025-12-08 09:29:05 | WARNING | Failed login attempt for user 'admin' --' from 127.0.0.1
+2025-12-08 09:29:07 | WARNING | Failed login attempt for user '' UNION SELECT 1, 'admin', 'hash' --' from 127.0.0.1
+2025-12-08 09:29:09 | WARNING | Failed login attempt for user 'admin' OR 1=1 LIMIT 1 --' from 127.0.0.1
+2025-12-08 09:29:11 | WARNING | Failed login attempt for user '' OR TRUE --' from 127.0.0.1
+2025-12-08 10:17:33 | INFO | Successful login: panda from 127.0.0.1
+2025-12-08 10:17:36 | INFO | File access: 2839d959-3e24-44c8-bb4a-6be9362ea0af.jpg by admin panda
+2025-12-08 10:17:37 | INFO | File access: 41bcef76-c4dd-4f0a-8696-d938b97c41b0.png by admin panda
+2025-12-08 10:17:37 | INFO | File access: 0942c0d1-26a9-4671-969f-20ef3510caeb.png by admin panda

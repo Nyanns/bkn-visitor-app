@@ -530,6 +530,12 @@ pip install -r requirements.txt --force-reinstall
 
 ## 📝 Changelog
 
+### v1.4.1 (December 8, 2025) - Security Hardening 🔒
+#### Security Features
+- ✅ **Backend Hardening**: Added `SecureHeadersMiddleware` (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection).
+- ✅ **Honeyport Defense**: Added `honeyport.py` to detect and log internal network scanning on port 8888.
+- ✅ **Security Audit Tool**: Added `security_audit.py` for automated penetration testing (SQLi, Auth, Headers).
+
 ### v1.4.0 (December 8, 2025) - Real-time & Manual Checkout Update 🔄
 #### New Features
 - ✅ **Admin Manual Checkout**: Admins can now force check-out visitors who forgot to log out directly from the Dashboard or Visitor Detail page.
