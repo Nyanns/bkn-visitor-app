@@ -85,6 +85,7 @@ const StatCard = ({ label, value, icon, helpText, trend, colorScheme = "blue" })
 function AdminAnalytics() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [filterDays, setFilterDays] = useState(30); // Default 30 days
     const navigate = useNavigate();
 
     // Theme Colors
@@ -95,21 +96,20 @@ function AdminAnalytics() {
     // Fetch Data
     useEffect(() => {
         const fetchData = async () => {
+            setLoading(true); // Show loading when filter changes
             try {
-                // Determine greeting based on time
-                // const hour = new Date().getHours();
-
-                const response = await api.get('/analytics/dashboard');
+                const response = await api.get('/analytics/dashboard', {
+                    params: { days: filterDays }
+                });
                 setData(response.data);
             } catch (error) {
                 console.error("Failed to fetch analytics:", error);
             } finally {
-                // Simulate slightly longer loading for "premium" feel (smooth transition)
-                setTimeout(() => setLoading(false), 600);
+                setTimeout(() => setLoading(false), 500);
             }
         };
         fetchData();
-    }, []);
+    }, [filterDays]); // Re-run when filterDays changes
 
     // Loading Skeleton
     if (loading) {
@@ -159,7 +159,18 @@ function AdminAnalytics() {
                             <Icon as={FaFilter} mr={2} color="gray.400" />
                             <Text>Filter</Text>
                         </Flex>
-                        <Select w="180px" bg="white" size="md" borderRadius="md" fontWeight="500" borderColor="gray.200" boxShadow="sm" defaultValue="30" focusBorderColor="blue.500">
+                        <Select
+                            w="180px"
+                            bg="white"
+                            size="md"
+                            borderRadius="md"
+                            fontWeight="500"
+                            borderColor="gray.200"
+                            boxShadow="sm"
+                            value={filterDays}
+                            onChange={(e) => setFilterDays(parseInt(e.target.value))}
+                            focusBorderColor="blue.500"
+                        >
                             <option value="7">7 Hari Terakhir</option>
                             <option value="30">30 Hari Terakhir</option>
                             <option value="90">3 Bulan Terakhir</option>
@@ -202,7 +213,7 @@ function AdminAnalytics() {
                             <Flex justify="space-between" align="center">
                                 <Box>
                                     <Heading size="sm" color="gray.800" fontWeight="700">Tren Kunjungan</Heading>
-                                    <Text fontSize="xs" color="gray.500" mt={1}>Grafik 30 hari terakhir</Text>
+                                    <Text fontSize="xs" color="gray.500" mt={1}>Grafik {filterDays} hari terakhir</Text>
                                 </Box>
                                 <Badge colorScheme="blue" variant="subtle" borderRadius="full" px={2}>Daily</Badge>
                             </Flex>

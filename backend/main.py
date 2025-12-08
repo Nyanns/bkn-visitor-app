@@ -740,60 +740,97 @@ def force_checkout_visit(
 
 # --- 7. ANALYTICS ENDPOINT ---
 @app.get("/analytics/dashboard", dependencies=[Depends(get_current_admin)])
-def get_analytics(db: Session = Depends(get_db)):
+def get_analytics(days: int = 30, db: Session = Depends(get_db)):
     """
     Get aggregated data for analytics dashboard.
+    Supports filtering by last N days (default 30).
     """
-    # 1. Heatmap: Visits by Hour
-    # Group by hour of check_in_time
-    hourly_stats = db.query(
-        extract('hour', models.VisitLog.check_in_time).label('hour'),
-        func.count(models.VisitLog.id).label('count')
-    ).group_by('hour').all()
+    jakarta_tz = pytz.timezone('Asia/Jakarta')
     
-    # Format: 0-23 array
-    heatmap_data = [{"hour": int(h), "count": c} for h, c in hourly_stats]
+    # Calculate cutoff date
+    cutoff_date = datetime.now() - timedelta(days=days)
     
-    # Fill missing hours with 0
-    full_heatmap = []
-    hour_map = {item['hour']: item['count'] for item in heatmap_data}
-    for i in range(24):
-        full_heatmap.append({"hour": i, "count": hour_map.get(i, 0)})
+    # Fetch logs within range (or all for heatmap? usually analytics honors the filter)
+    # Let's apply filter to ALL charts for consistency
+    logs = db.query(models.VisitLog).filter(models.VisitLog.check_in_time >= cutoff_date).all()
+    
+    # --- 1. Heatmap (Python Aggregation for Timezone Accuracy) ---
+    # Initialize hours 0-23
+    hourly_counts = {i: 0 for i in range(24)}
+    
+    for log in logs:
+        if log.check_in_time:
+            # Convert UTC (DB) -> Jakarta
+            utc_time = log.check_in_time.replace(tzinfo=pytz.UTC)
+            jkt_time = utc_time.astimezone(jakarta_tz)
+            hourly_counts[jkt_time.hour] += 1
+            
+    heatmap_data = [{"hour": h, "count": c} for h, c in hourly_counts.items()]
+    
+    # --- 2. Trend (Daily Counts) ---
+    daily_counts = {}
+    
+    # Iterate logs to count per day
+    for log in logs:
+        if log.check_in_time:
+            utc_time = log.check_in_time.replace(tzinfo=pytz.UTC)
+            jkt_time = utc_time.astimezone(jakarta_tz)
+            date_str = jkt_time.strftime("%Y-%m-%d")
+            daily_counts[date_str] = daily_counts.get(date_str, 0) + 1
+            
+    # Fill missing dates in range
+    trend_data = []
+    for i in range(days):
+        d = (datetime.now(jakarta_tz) - timedelta(days=days - 1 - i)).strftime("%Y-%m-%d")
+        trend_data.append({"date": d, "count": daily_counts.get(d, 0)})
 
-    # 2. Monthly Trend (Last 30 Days)
-    thirty_days_ago = datetime.now() - timedelta(days=30)
-    daily_stats = db.query(
-        cast(models.VisitLog.check_in_time, Date).label('date'),
-        func.count(models.VisitLog.id).label('count')
-    ).filter(models.VisitLog.check_in_time >= thirty_days_ago)\
-    .group_by('date').order_by('date').all()
-    
-    trend_data = [{"date": str(d), "count": c} for d, c in daily_stats]
-
-    # 3. Top Institutions
+    # --- 3. Top Institutions (Filtered) ---
+    institution_counts = {}
+    for log in logs:
+        # We need visitor data. This is inefficient N+1 if lazy loading.
+        # But 'logs' has visitor_nik.
+        # Let's optimize: query Visitor info separately or join?
+        # Since we already fetched logs, let's use a JOIN query for this part instead of Python loop if logs is large.
+        # But for consistency with 'logs' list, let's just grab visitor info.
+        # Actually, let's re-query for Top Inst to be safe and efficient.
+        pass
+        
     top_institutions = db.query(
         models.Visitor.institution,
         func.count(models.Visitor.nik).label('count')
     ).join(models.VisitLog, models.Visitor.nik == models.VisitLog.visitor_nik)\
-    .group_by(models.Visitor.institution)\
-    .order_by(desc('count'))\
-    .limit(5).all()
+     .filter(models.VisitLog.check_in_time >= cutoff_date)\
+     .group_by(models.Visitor.institution)\
+     .order_by(desc('count'))\
+     .limit(5).all()
     
     institution_data = [{"name": inst, "count": c} for inst, c in top_institutions]
 
-    # 4. Summary Cards
-    total_visits = db.query(func.count(models.VisitLog.id)).scalar()
+    # --- 4. Summary Cards ---
+    total_visits = db.query(func.count(models.VisitLog.id)).scalar() # All time total
+    filtered_visits = len(logs) # Visits in range
     
-    today = datetime.now().date()
-    visits_today = db.query(func.count(models.VisitLog.id))\
-        .filter(func.date(models.VisitLog.check_in_time) == today).scalar()
+    today = datetime.now(jakarta_tz).date()
+    # Count today's visits (needs DB query or filter 'logs' if 'days' covers today)
+    # Safer to query DB for exact "Today" regardless of filter
+    # But wait, date comparision in DB (UTC) vs Local.
+    # Let's use Python on recent logs if efficient, or DB date func.
+    # DB func is risky for timezone. Let's filter 'logs'.
+    # If filter is 7 days, today is included.
+    
+    visits_today = 0
+    now_utc = datetime.now(pytz.UTC)
+    start_of_day_utc = datetime.now(jakarta_tz).replace(hour=0, minute=0, second=0, microsecond=0).astimezone(pytz.UTC)
+    
+    visits_today = db.query(func.count(models.VisitLog.id)).filter(models.VisitLog.check_in_time >= start_of_day_utc).scalar()
 
     return {
-        "heatmap": full_heatmap,
+        "heatmap": heatmap_data,
         "trend": trend_data,
         "institutions": institution_data,
         "summary": {
-            "total_visits": total_visits,
+            "total_visits": total_visits, # Keep global total
+            "visits_in_range": filtered_visits,
             "visits_today": visits_today
         }
     }

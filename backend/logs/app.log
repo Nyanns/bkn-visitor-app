@@ -292,3 +292,10 @@
 2025-12-08 10:17:36 | INFO | File access: 2839d959-3e24-44c8-bb4a-6be9362ea0af.jpg by admin panda
 2025-12-08 10:17:37 | INFO | File access: 41bcef76-c4dd-4f0a-8696-d938b97c41b0.png by admin panda
 2025-12-08 10:17:37 | INFO | File access: 0942c0d1-26a9-4671-969f-20ef3510caeb.png by admin panda
+2025-12-08 10:18:09 | INFO | Check-out: Hana Machia (NIK: 12345) at 2025-12-08 10:18:08 WIB
+2025-12-08 10:19:27 | WARNING | Failed login attempt for user '' OR '1'='1' from 127.0.0.1
+2025-12-08 10:19:29 | WARNING | Failed login attempt for user 'admin' --' from 127.0.0.1
+2025-12-08 10:19:31 | WARNING | Failed login attempt for user '' UNION SELECT 1, 'admin', 'hash' --' from 127.0.0.1
+2025-12-08 10:19:33 | WARNING | Failed login attempt for user 'admin' OR 1=1 LIMIT 1 --' from 127.0.0.1
+2025-12-08 10:19:35 | WARNING | Failed login attempt for user '' OR TRUE --' from 127.0.0.1
+2025-12-08 10:23:26 | INFO | Successful login: panda from 127.0.0.1
