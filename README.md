@@ -530,6 +530,12 @@ pip install -r requirements.txt --force-reinstall
 
 ## 📝 Changelog
 
+### v1.4.2 (December 8, 2025) - Analytics & Reporting Fixes 📊
+#### Bug Fixes & Improvements
+- ✅ **Heatmap Timezone Fix**: Corrected hourly density calculation to strictly use **Asia/Jakarta** (UTC+7), ensuring visit times match local reality.
+- ✅ **Dynamic Date Filters**: Implemented backend support for `days` parameter and connected frontend filters (7/30/90 days).
+- ✅ **Trend Graph Accuracy**: "Visitor Trends" chart now accurately reflects the selected time range.
+
 ### v1.4.1 (December 8, 2025) - Security Hardening 🔒
 #### Security Features
 - ✅ **Backend Hardening**: Added `SecureHeadersMiddleware` (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection).
@@ -650,7 +656,7 @@ This project is proprietary software developed for **BKN (Badan Kepegawaian Nega
 **Status**: ✅ **Production Ready**  
 **Overall Score**: **8.8/10 (Grade A)**  
 **Last Updated**: December 8, 2025  
-**Version**: 1.3.0
+**Version**: 1.4.2
 
 ### Scoring Breakdown
 | Category | Score | Status |
