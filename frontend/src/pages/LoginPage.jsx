@@ -3,10 +3,10 @@
 import { useRef, useEffect } from 'react';
 import {
     Box, Button, FormControl, Input, Heading, VStack, Text, Image, Flex,
-    Icon, InputGroup, InputLeftElement
+    Icon, InputGroup, InputLeftElement, InputRightElement, Fade
 } from '@chakra-ui/react';
 import { useMotionValue } from 'framer-motion';
-import { FaUser, FaArrowRight } from 'react-icons/fa';
+import { FaUser, FaArrowRight, FaCheckCircle } from 'react-icons/fa';
 import bknLogo from '../assets/Logo_Badan_Kepegawaian_Negara.png';
 import AntigravityBackground from '../components/AntigravityBackground';
 
@@ -100,7 +100,19 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
                                     inputMode="numeric"
                                     h="56px" // Taller input
                                 />
+                                {nik.length === 16 && (
+                                    <InputRightElement h="full" pr={4}>
+                                        <Fade in={true}>
+                                            <Icon as={FaCheckCircle} color="green.500" boxSize={5} />
+                                        </Fade>
+                                    </InputRightElement>
+                                )}
                             </InputGroup>
+                            <Flex justify="flex-end" w="full" mt={-2}>
+                                <Text fontSize="xs" color={nik.length === 16 ? "green.600" : "gray.400"} fontWeight={nik.length === 16 ? "600" : "400"}>
+                                    {nik.length}/16
+                                </Text>
+                            </Flex>
 
                             <Button
                                 h="56px" // Matching height
