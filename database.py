@@ -6,7 +6,9 @@ from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 
 # 1. Load file .env
-load_dotenv()
+from pathlib import Path
+env_path = Path(__file__).parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 # 2. Ambil alamat database dari .env
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")

@@ -9,8 +9,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # Configuration
-DB_FILE = "visitor_db.sqlite"
-BACKUP_DIR = "backups"
+# Configuration
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_FILE = os.path.join(BASE_DIR, "database.db")
+BACKUP_DIR = os.path.join(BASE_DIR, "backups")
 KEEP_DAYS = 7  # Keep backups for last 7 days
 
 def backup_database():
