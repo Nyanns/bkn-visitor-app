@@ -59,7 +59,7 @@ echo.
 set /p create_admin="Do you want to create an Admin account now? (y/n): "
 if /i "%create_admin%"=="y" (
     echo Running Admin Creation Wizard...
-    python create_admin.py
+    python scripts/create_admin.py
 )
 
 echo.
