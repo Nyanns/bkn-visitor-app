@@ -40,7 +40,7 @@ This guide will help you deploy the **BKN Visitor Management System** to [Railwa
 6.  Add the following variables:
     - `DATABASE_URL`: Paste the PostgreSQL URL you copied earlier.
     - `SECRET_KEY`: Generate a random string (e.g., `super-secret-key-123`).
-    - `ALLOWED_ORIGINS`: `*` (or your frontend URL after Step 4).
+    - `ALLOWED_ORIGINS`: Paste your **Frontend URL** here (e.g., `https://frontend-xxxx.up.railway.app`). Do not add a trailing slash.
     - `ALLOW_SETUP_ADMIN`: `true` (only for first deployment to create admin).
 7.  Railway will automatically redeploy. Open the **"Deployments"** tab to watch the logs.
 8.  Once "Active", click the generated URL (e.g., `https://web-production-xxxx.up.railway.app`). You should see `{"status":"ok"}`.
@@ -75,5 +75,13 @@ This guide will help you deploy the **BKN Visitor Management System** to [Railwa
 - **Logs**: Always check the "Deployments" -> "View Logs" tab if something fails.
 - **Build Failed**: Ensure `requirements.txt` (backend) or `package.json` (frontend) is correct.
 - **Database Error**: Verify `DATABASE_URL` is correct in Backend Variables.
+
+- **CORS Error (405 Method Not Allowed)**: 
+  - Check Backend Variable `ALLOWED_ORIGINS`. It must match your Frontend URL exactly (no trailing slash).
+  - Check Frontend Variable `VITE_API_URL`. It must not have a trailing slash.
+- **Connection Refused / Failed to Load Resource**:
+  - Check Frontend Variable `VITE_API_URL`. **Must include `https://` prefix** (e.g., `https://bkn-visitor-app.up.railway.app`).
+- **NPM Command Not Found**:
+  - Ensure `frontend/nixpacks.toml` exists to tell Railway to install Node.js.
 
 Happy Deploying! 🚀
