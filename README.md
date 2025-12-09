@@ -145,7 +145,10 @@ npm run dev
 ```bash
 cd backend
 python create_admin.py
-# Follow interactive prompts
+# Follow interactive prompts to set username and password
+
+# To list existing admins:
+# python create_admin.py list
 ```
 
 **Then set in `.env`:**
