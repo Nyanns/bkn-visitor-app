@@ -462,7 +462,7 @@ See `deployment_guide.md` for step-by-step:
 
 ### Cloud Platform (Easiest)
 Supported platforms:
-- **Railway.app** (recommended for beginners)
+- **[Railway.app Deployment Guide](RAILWAY_DEPLOY.md)** (⭐ Recommended - Click to read)
 - **Heroku**
 - **DigitalOcean App Platform**
 
