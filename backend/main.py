@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-import magic
+import puremagic
 from loguru import logger
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill
@@ -187,7 +187,18 @@ def validate_and_save_file(upload_file: UploadFile) -> str:
     try:
         header = upload_file.file.read(2048)
         upload_file.file.seek(0)
-        mime_type = magic.from_buffer(header, mime=True)
+        
+        # Use puremagic to detect mime type from bytes
+        # puremagic.from_string returns list, use magic_string for simple detection or try/except
+        try:
+             # puremagic.magic_string returns list of PureMagicResult
+             # We want the highest confidence or first match
+             detected_mimes = puremagic.magic_string(header)
+             if not detected_mimes:
+                 raise ValueError("Unknown file type")
+             mime_type = detected_mimes[0].mime_type
+        except Exception:
+             mime_type = "application/octet-stream"
         
         ALLOWED_MIMES = {"image/jpeg", "image/png", "application/pdf"}
         if mime_type not in ALLOWED_MIMES:
