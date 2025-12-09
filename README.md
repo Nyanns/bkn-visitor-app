@@ -176,8 +176,8 @@ ALLOW_SETUP_ADMIN=false  # IMPORTANT: Disable after initial setup!
 |------------|---------|---------|
 | **React** | UI Framework | 19.2.0 |
 | **Vite** | Build Tool | 7.2.5 |
-| **Chakra UI** | Component Library | 3.2.2 |
-| **React Router** | Routing | 7.1.1 |
+| **Chakra UI** | Component Library | 2.10.4 |
+| **React Router** | Routing | 7.10.0 |
 | **Axios** | HTTP Client | 1.7.9 |
 | **React Icons** | Icons | 5.4.0 |
 | **Recharts** | Data Visualization | 2.15.0 |
@@ -289,7 +289,7 @@ openssl rand -base64 32
 ```
 bkn-visitor-app/
 ├── backend/
-│   ├── main.py                 # FastAPI application (598 lines)
+│   ├── main.py                 # FastAPI application (776 lines)
 │   ├── models.py               # SQLAlchemy models
 │   ├── database.py             # Database config with pooling
 │   ├── create_admin.py         # Admin creation CLI
@@ -672,7 +672,7 @@ This project is proprietary software developed for **BKN (Badan Kepegawaian Nega
 **Repository**: [github.com/Nyanns/bkn-visitor-app](https://github.com/Nyanns/bkn-visitor-app)  
 **Status**: ✅ **Production Ready**  
 **Overall Score**: **8.8/10 (Grade A)**  
-**Last Updated**: December 8, 2025  
+**Last Updated**: December 9, 2025  
 **Version**: 1.4.2
 
 ### Scoring Breakdown
