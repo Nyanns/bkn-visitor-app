@@ -144,7 +144,7 @@ npm run dev
 ### 4️⃣ Create Initial Admin
 ```bash
 cd backend
-python create_admin.py
+python scripts/create_admin.py
 # Follow interactive prompts to set username and password
 
 # To list existing admins:
@@ -292,12 +292,14 @@ openssl rand -base64 32
 ```
 bkn-visitor-app/
 ├── backend/
-│   ├── main.py                 # FastAPI application (776 lines)
+│   ├── main.py                 # FastAPI application
 │   ├── models.py               # SQLAlchemy models
 │   ├── database.py             # Database config with pooling
-│   ├── create_admin.py         # Admin creation CLI
-│   ├── backup_database.py      # Backup utility
 │   ├── requirements.txt        # Python dependencies
+│   ├── scripts/                # Utility scripts
+│   │   ├── create_admin.py     # Admin creation CLI
+│   │   ├── backup_database.py  # Backup utility
+│   │   └── security_audit.py   # Security audit tool
 │   ├── .env                    # Environment variables (gitignored)
 │   ├── .env.example            # Example env file
 │   ├── database.db             # SQLite database (gitignored)
@@ -328,7 +330,7 @@ bkn-visitor-app/
 │
 ├── .gitignore                  # Comprehensive gitignore
 ├── README.md                   # This file
-└── deployment_guide.md         # Deployment instructions
+
 
 ```
 
@@ -446,7 +448,7 @@ tail -n 100 backend/logs/app.log
 - [ ] ✅ Test health endpoint regularly
 
 ### Docker Deployment (Recommended)
-See `deployment_guide.md` for complete Docker setup with:
+See `docs/RAILWAY_DEPLOY.md` for cloud options or standard Docker practices:
 - PostgreSQL container
 - Backend container  
 - Frontend container (Nginx)
@@ -462,7 +464,7 @@ See `deployment_guide.md` for step-by-step:
 
 ### Cloud Platform (Easiest)
 Supported platforms:
-- **[Railway.app Deployment Guide](RAILWAY_DEPLOY.md)** (⭐ Recommended - Click to read)
+- **[Railway.app Deployment Guide](docs/RAILWAY_DEPLOY.md)** (⭐ Recommended - Click to read)
 - **Heroku**
 - **DigitalOcean App Platform**
 
