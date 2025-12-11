@@ -1,6 +1,6 @@
 # 🏢 BKN Visitor Management System
 
-**Sistem Manajemen Pengunjung BKN** - Aplikasi enterprise-grade untuk mengelola kunjungan di lingkungan Badan Kepegawaian Negara (BKN).
+> **Sistem Manajemen Pengunjung BKN** - Aplikasi enterprise-grade untuk mengelola kunjungan di lingkungan Badan Kepegawaian Negara (BKN).
 
 [![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-success)](https://github.com/Nyanns/bkn-visitor-app)
 [![Security Grade](https://img.shields.io/badge/Security-9.5%2F10-brightgreen)]()
@@ -9,7 +9,7 @@
 [![React](https://img.shields.io/badge/React-19.2.0-61DAFB?logo=react)](https://react.dev)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Latest-009688?logo=fastapi)](https://fastapi.tiangolo.com)
 
-**Overall Score: 8.6/10 (Grade A-)**
+**Overall Score:** 8.6/10 (Grade A-)
 
 ---
 
