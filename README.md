@@ -115,7 +115,7 @@ pip install -r requirements.txt
 
 # Create .env file
 echo "SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(32))')" > .env
-echo "DATABASE_URL=sqlite:///./database.db" >> .env
+echo "DATABASE_URL=postgresql://user:password@localhost:5432/bkn_visitor" >> .env
 echo "ALLOWED_ORIGINS=http://localhost:5173" >> .env
 echo "ALLOW_SETUP_ADMIN=true" >> .env
 
@@ -194,7 +194,7 @@ ALLOW_SETUP_ADMIN=false  # IMPORTANT: Disable after initial setup!
 ```env
 # Security (REQUIRED)
 SECRET_KEY=your-super-secret-key-min-32-chars-random
-DATABASE_URL=sqlite:///./database.db
+DATABASE_URL=postgresql://user:password@localhost:5432/bkn_visitor
 
 # CORS (Production)
 ALLOWED_ORIGINS=http://localhost:5173,https://yourdomain.com
@@ -552,6 +552,12 @@ pip install -r requirements.txt --force-reinstall
 
 ## 📝 Changelog
 
+### v1.5.0 (December 12, 2025) - PostgreSQL & Auto Check-In 🚀
+#### Major Updates
+- ✅ **PostgreSQL Migration**: Switched database from SQLite to PostgreSQL for enterprise reliability.
+- ✅ **Auto Check-In**: Added "Check In Immediately" option during visitor registration.
+- ✅ **UI Stability**: Fixed 3D background elements jumping/randomizing during typing.
+
 ### v1.4.2 (December 8, 2025) - Analytics & Reporting Fixes 📊
 #### Bug Fixes & Improvements
 - ✅ **Heatmap Timezone Fix**: Corrected hourly density calculation to strictly use **Asia/Jakarta** (UTC+7), ensuring visit times match local reality.
@@ -677,8 +683,8 @@ This project is proprietary software developed for **BKN (Badan Kepegawaian Nega
 **Repository**: [github.com/Nyanns/bkn-visitor-app](https://github.com/Nyanns/bkn-visitor-app)  
 **Status**: ✅ **Production Ready**  
 **Overall Score**: **8.8/10 (Grade A)**  
-**Last Updated**: December 9, 2025  
-**Version**: 1.4.2
+**Last Updated**: December 12, 2025  
+**Version**: 1.5.0
 
 ### Scoring Breakdown
 | Category | Score | Status |
