@@ -73,6 +73,7 @@ function AdminPage() {
         full_name: '',
         institution: '',
         phone: '',
+        auto_checkin: false,
     });
     const [file, setFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
@@ -131,9 +132,10 @@ function AdminPage() {
     };
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-        validateField(name, value);
+        const { name, value, type, checked } = e.target;
+        const finalValue = type === 'checkbox' ? checked : value;
+        setFormData(prev => ({ ...prev, [name]: finalValue }));
+        if (type !== 'checkbox') validateField(name, finalValue);
     };
 
     // File Handling
@@ -210,7 +212,7 @@ function AdminPage() {
     };
 
     const resetForm = () => {
-        setFormData({ nik: '', full_name: '', institution: '', phone: '' });
+        setFormData({ nik: '', full_name: '', institution: '', phone: '', auto_checkin: false });
         setFile(null);
         setImagePreview(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -464,6 +466,20 @@ function AdminPage() {
                                         error={errors.phone}
                                         handleChange={handleChange}
                                     />
+
+                                    <FormControl display="flex" alignItems="center">
+                                        <input
+                                            type="checkbox"
+                                            name="auto_checkin"
+                                            id="auto_checkin"
+                                            checked={formData.auto_checkin}
+                                            onChange={handleChange}
+                                            style={{ width: '20px', height: '20px', marginRight: '10px' }}
+                                        />
+                                        <FormLabel htmlFor="auto_checkin" mb={0} fontSize="sm" color="gray.600" fontWeight="600">
+                                            Check In Immediately?
+                                        </FormLabel>
+                                    </FormControl>
 
                                     <Box w="full" pt={4}>
                                         <Button
