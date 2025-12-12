@@ -1,5 +1,5 @@
 // File: frontend/src/components/AntigravityBackground.jsx
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Box, VStack, Heading, Text } from '@chakra-ui/react';
 import { motion, useSpring } from 'framer-motion';
 
@@ -8,13 +8,8 @@ import { motion, useSpring } from 'framer-motion';
 const GOOGLE_COLORS = ['#4285F4', '#DB4437', '#F4B400', '#0F9D58']; // Blue, Red, Yellow, Green
 const SHAPES = ['circle', 'square', 'pill', 'triangle'];
 
-const PhysicsShape = ({ mouseX, mouseY, index }) => {
-    // Random initial properties
-    const size = Math.random() * 60 + 40; // 40px to 100px
-    const color = GOOGLE_COLORS[index % GOOGLE_COLORS.length];
-    const shape = SHAPES[index % SHAPES.length];
-    const initialTop = Math.random() * 90;
-    const initialLeft = Math.random() * 90;
+const PhysicsShape = ({ mouseX, mouseY, config }) => {
+    const { size, color, shape, initialTop, initialLeft } = config;
 
     // Physics Repulsion Logic
     // Using simple distance check: if mouse is close, push away
@@ -23,6 +18,7 @@ const PhysicsShape = ({ mouseX, mouseY, index }) => {
     const rotate = useSpring(0, { stiffness: 50, damping: 20 });
 
     useEffect(() => {
+        // ... existing logic ...
         const unsubscribeX = mouseX.on("change", latestX => {
             const rectX = (window.innerWidth * initialLeft) / 100;
             const diffX = latestX - rectX;
@@ -92,7 +88,20 @@ const PhysicsShape = ({ mouseX, mouseY, index }) => {
 };
 
 // Reusable Background Component
+
 const AntigravityBackground = ({ mouseX, mouseY, showText = true }) => {
+    // Generate shapes only once on mount
+    const shapes = useMemo(() => {
+        return [...Array(12)].map((_, index) => ({
+            id: index,
+            size: Math.random() * 60 + 40,
+            color: GOOGLE_COLORS[index % GOOGLE_COLORS.length],
+            shape: SHAPES[index % SHAPES.length],
+            initialTop: Math.random() * 90,
+            initialLeft: Math.random() * 90
+        }));
+    }, []);
+
     return (
         <Box
             position="absolute"
@@ -102,8 +111,8 @@ const AntigravityBackground = ({ mouseX, mouseY, showText = true }) => {
             bg="#f8f9fa"
         >
             {/* Floating Props */}
-            {[...Array(12)].map((_, i) => (
-                <PhysicsShape key={i} index={i} mouseX={mouseX} mouseY={mouseY} />
+            {shapes.map((config) => (
+                <PhysicsShape key={config.id} config={config} mouseX={mouseX} mouseY={mouseY} />
             ))}
 
             {/* Big Text Overlay - Optional */}
