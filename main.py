@@ -457,6 +457,7 @@ def get_admin_logs(current_admin: models.Admin = Depends(get_current_admin), db:
 def create_visitor(
     nik: str = Form(..., min_length=3, max_length=20),
     full_name: str = Form(...), institution: str = Form(...), phone: str = Form(None),
+    auto_checkin: bool = Form(False),  # New parameter
     photo: UploadFile = File(...), ktp: UploadFile = File(None), task_letter: UploadFile = File(None),
     current_admin: models.Admin = Depends(get_current_admin),
     db: Session = Depends(get_db)
@@ -469,14 +470,32 @@ def create_visitor(
     ktp_path = validate_and_save_file(ktp) if ktp else None
     task_letter_path = validate_and_save_file(task_letter) if task_letter else None
 
+    # 1. Register Visitor
     new_visitor = models.Visitor(
         nik=nik, full_name=full_name.strip(), institution=institution.strip(),
         phone=phone, photo_path=photo_path, ktp_path=ktp_path, task_letter_path=task_letter_path
     )
     db.add(new_visitor)
     db.commit()
+
+    # 2. Auto Check-In Logic
+    message = "Registrasi Tamu Berhasil"
+    if auto_checkin:
+        now_jkt = datetime.now(JAKARTA_TZ)
+        now_utc = now_jkt.astimezone(pytz.UTC).replace(tzinfo=None)
+        
+        new_log = models.VisitLog(
+            visitor_nik=nik, 
+            check_in_time=now_utc, 
+            visit_date=now_jkt.date()
+        )
+        db.add(new_log)
+        db.commit()
+        message = "Registrasi & Auto Check-In Berhasil"
+        logger.info(f"Auto Check-in: {full_name} (NIK: {nik}) at {now_jkt}")
+
     logger.info(f"New visitor registered: {full_name} (NIK: {nik}) by {current_admin.username}")
-    return StandardResponse(status="success", message="Registrasi Tamu Berhasil")
+    return StandardResponse(status="success", message=message)
 
 # === PUBLIC ENDPOINTS ===
 @app.get("/visitors/{nik}", tags=["Visitor"])
