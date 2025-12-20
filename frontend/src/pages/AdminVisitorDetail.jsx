@@ -605,7 +605,7 @@ function AdminVisitorDetail() {
                                                                     <HStack>
                                                                         <Button
                                                                             as="a" size="xs" colorScheme="blue" variant="ghost" leftIcon={<FaDownload />}
-                                                                            href={`/api/uploads/${doc.filename}`} target="_blank"
+                                                                            href={`/api/uploads/${doc.stored_filename}`} target="_blank"
                                                                         >
                                                                             Download
                                                                         </Button>

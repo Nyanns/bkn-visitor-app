@@ -20,7 +20,7 @@ class Visitor(Base):
     
     created_at = Column(DateTime, default=datetime.now)
 
-    logs = relationship("VisitLog", back_populates="visitor")
+    logs = relationship("VisitLog", back_populates="visitor", cascade="all, delete-orphan")
 
 # Tabel 2: Master Ruangan
 class Room(Base):

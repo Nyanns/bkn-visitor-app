@@ -552,6 +552,13 @@ pip install -r requirements.txt --force-reinstall
 
 ## 📝 Changelog
 
+### v1.6.1 (December 20, 2025) - Fixes & Cleanup 🛠️
+#### Bug Fixes
+- ✅ **Task Letter Download Fix**: Resolved 404 error by correctly mapping file requests to stored UUID filenames (`/uploads/{filename}`).
+- ✅ **Frontend Proxy**: Added proper proxy configuration in `vite.config.js` to route `/api` requests to backend.
+- ✅ **UI Cleanup**: Removed redundant "Export Excel" button from Master Data page.
+- ✅ **Backend Improvements**: Enhanced file serving endpoint to handle both legacy and new task letters unifiedly.
+
 ### v1.6.0 (December 20, 2025) - Master Data Export & Frontend Enhancements 📈
 #### New Features
 - ✅ **Master Data Export**: Added capability for Admins to export Room and Companion data to Excel.
@@ -690,7 +697,7 @@ This project is proprietary software developed for **BKN (Badan Kepegawaian Nega
 **Status**: ✅ **Production Ready**  
 **Overall Score**: **8.8/10 (Grade A)**  
 **Last Updated**: December 20, 2025  
-**Version**: 1.6.0
+**Version**: 1.6.1
 
 ### Scoring Breakdown
 | Category | Score | Status |

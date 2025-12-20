@@ -277,17 +277,8 @@ function AdminMasterData({ token }) {
 
     return (
         <Box>
-            <HStack justify="flex-end" mb={4}>
-                <Button
-                    leftIcon={<FaFileExcel />}
-                    colorScheme="green"
-                    onClick={handleExport}
-                    isLoading={isExporting}
-                    loadingText="Exporting..."
-                >
-                    Export Data (Excel)
-                </Button>
-            </HStack>
+
+
 
             <Tabs variant="enclosed" colorScheme="blue">
                 <TabList>

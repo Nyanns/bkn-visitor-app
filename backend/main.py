@@ -86,10 +86,33 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # SECURITY: Public access removed - use protected endpoint instead
 # app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
-# --- 3. CORS ---
+# --- 3. MIDDLEWARE & SECURITY ---
+
+# A. PROXY HEADERS (For Nginx/Docker) - Add this if behind proxy
+# from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+# app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+
+# B. SECURE HEADERS (Inner Middleware)
+# Using standard middleware function instead of BaseHTTPMiddleware to avoid FileResponse issues
+@app.middleware("http")
+async def secure_headers_middleware(request: Request, call_next):
+    try:
+        response = await call_next(request)
+        # Basic Security Headers
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+    except Exception as e:
+        # If an error occurs during response generation (e.g. streaming), re-raise
+        # so FastAPI error handlers can catch it, or handle it here.
+        # For now, let it propagate so CORS (Outer) can handle the error response if any.
+        logger.error(f"Middleware error: {e}")
+        raise e
+
+# C. CORS (Outer Middleware - Added LAST to wrap everything)
 # Load allowed origins from environment variable (comma-separated)
-# Default to localhost for development
-# Load allowed origins from environment variable (comma-separated), or use default
 env_origins = os.getenv("ALLOWED_ORIGINS", "")
 default_origins = [
     "http://localhost:5173",
@@ -114,21 +137,6 @@ app.add_middleware(
     allow_methods=["*"], 
     allow_headers=["*"]
 )
-
-# --- 3b. SECURE HEADERS MIDDLEWARE ---
-class SecureHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        # Basic Security Headers (Score 2/4 in Audit)
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        # CSP (Permissive for Dev)
-        # response.headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
-        return response
-
-app.add_middleware(SecureHeadersMiddleware)
 
 # --- 4. SCHEMAS ---
 class StandardResponse(BaseModel):
@@ -509,8 +517,8 @@ def export_to_excel(request: Request, background_tasks: BackgroundTasks, current
                 # Let's adjust to be safe: serve relative to upload dir.
                 
                 clean_filename = os.path.basename(first_letter.file_path)
-                # Construct URL assuming static mount at /uploads
-                file_url = f"{base_url}/uploads/task_letters/{clean_filename}"
+                # Construct URL strictly pointing to /uploads which finds file in either dir
+                file_url = f"{base_url}/uploads/{clean_filename}"
                 
                 cell_letter.value = f"{letter_count} File (Lihat)"
                 cell_letter.hyperlink = file_url
@@ -948,6 +956,41 @@ def get_uploaded_file(filename: str, current_admin: models.Admin = Depends(get_c
     logger.info(f"File access: {filename} by admin {current_admin.username}")
     return FileResponse(file_path, media_type=media_type, headers=headers)
 
+@app.get("/uploads/task_letters/{filename}", tags=["Files"])
+def get_task_letter(filename: str, current_admin: models.Admin = Depends(get_current_admin)):
+    """
+    Protected endpoint for accessing task letters.
+    Requires admin authentication.
+    """
+    file_path = os.path.join(TASK_LETTER_DIR, filename)
+    
+    # Security: Prevent directory traversal
+    if ".." in filename or "/" in filename or "\\" in filename:
+        logger.warning(f"Directory traversal attempt blocked: {filename}")
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    
+    # Check if file exists
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Force download/preview
+    # PDFs should usually be previewable in modern browsers (inline)
+    # but strictly speaking user might want to download. 
+    # Let's default to inline for convenience, browsers handle it well.
+    
+    media_type = "application/pdf"
+    if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+        media_type = "image/jpeg"
+    
+    headers = {
+        "Content-Disposition": f"inline; filename={filename}",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "private, max-age=3600"
+    }
+    
+    logger.info(f"Task letter access: {filename} by admin {current_admin.username}")
+    return FileResponse(file_path, media_type=media_type, headers=headers)
+
 # UPDATE Visitor
 @app.put("/visitors/{nik}", tags=["Admin"])
 def update_visitor(
@@ -980,8 +1023,11 @@ def delete_visitor(
     if not visitor:
         raise HTTPException(status_code=404, detail="Visitor not found")
     
-    # Hapus log kunjungan terkait terlebih dahulu (Cascade delete manual)
-    db.query(models.VisitLog).filter(models.VisitLog.visitor_nik == nik).delete()
+    # Hapus log kunjungan secara iteratif agar cascade ke TaskLetter berjalan (ORM Level)
+    # Ini penting karena bulk delete (.delete()) by-pass cascade ORM!
+    logs = db.query(models.VisitLog).filter(models.VisitLog.visitor_nik == nik).all()
+    for log in logs:
+        db.delete(log)
     
     # Hapus file foto fisik jika ada
     if visitor.photo_path and os.path.exists(visitor.photo_path):
@@ -1076,6 +1122,7 @@ def get_task_letters(nik: str, db: Session = Depends(get_db)):
             "id": "legacy",
             "type": "legacy",
             "filename": os.path.basename(visitor.task_letter_path),
+            "stored_filename": os.path.basename(visitor.task_letter_path),
             "uploaded_at": visitor.created_at,
             "path": visitor.task_letter_path
         })
@@ -1091,6 +1138,7 @@ def get_task_letters(nik: str, db: Session = Depends(get_db)):
             "id": letter.id,
             "type": "additional",
             "filename": letter.original_filename,
+            "stored_filename": os.path.basename(letter.file_path),
             "uploaded_at": letter.uploaded_at,
             "path": letter.file_path,
             "visit_date": letter.visit.visit_date
@@ -1743,3 +1791,22 @@ def get_active_visit(nik: str, db: Session = Depends(get_db)):
             "can_add_more_letters": task_letters_count < MAX_TASK_LETTERS_PER_VISIT
         }
     }
+
+# === FILE SERVING ENDPOINT ===
+@app.get("/uploads/{filename}", tags=["System"])
+def get_uploaded_file(filename: str):
+    """
+    Serve uploaded files (photos, PDFs, etc).
+    """
+    # 1. Search in main UPLOAD_DIR
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    if os.path.exists(file_path):
+        return FileResponse(file_path)
+    
+    # 2. Search in TASK_LETTER_DIR
+    task_letter_path = os.path.join(TASK_LETTER_DIR, filename)
+    if os.path.exists(task_letter_path):
+        return FileResponse(task_letter_path)
+    
+    raise HTTPException(status_code=404, detail="File not found")
+
