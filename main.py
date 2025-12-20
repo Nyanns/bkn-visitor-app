@@ -3,6 +3,8 @@ import shutil
 import os
 import uuid
 import pytz
+import zipfile
+import io
 from datetime import datetime, timedelta
 from typing import List, Optional
 
@@ -499,28 +501,17 @@ def export_to_excel(request: Request, background_tasks: BackgroundTasks, current
             letter_count = db.query(models.TaskLetter).filter(models.TaskLetter.visit_id == log.id).count()
             
             if letter_count > 0:
-                # Link to the first one for simplicity in this flat table
-                first_letter = db.query(models.TaskLetter).filter(models.TaskLetter.visit_id == log.id).first()
-                filename = os.path.basename(first_letter.file_path)
-                file_url = f"{base_url}/uploads/task_letters/{filename}" # Note: Task letters in subdir
-                # Check if file path actually has subdir in DB or if it's full path.
-                # Models say: file_path = full path. 
-                # We need to serve it properly.
-                # Currently we only serve /uploads root.
-                # We need to make sure task_letters are accessible via URL.
-                # Let's check where task_letters are saved.
-                # main.py: TASK_LETTER_DIR = "uploads/task_letters"
-                # If we mount /uploads, then /uploads/task_letters/filename is accessible.
+                if letter_count > 1:
+                    # Link to ZIP download
+                    file_url = f"{base_url}/visits/{log.id}/task-letters/archive"
+                    cell_letter.value = f"Download {letter_count} Files (ZIP)"
+                else:
+                    # Link to the single file
+                    first_letter = db.query(models.TaskLetter).filter(models.TaskLetter.visit_id == log.id).first()
+                    clean_filename = os.path.basename(first_letter.file_path)
+                    file_url = f"{base_url}/uploads/{clean_filename}"
+                    cell_letter.value = f"1 File (Lihat)"
                 
-                # However, we need to be careful about the path stored in DB.
-                # Assuming DB stores relative or absolute path.
-                # Let's adjust to be safe: serve relative to upload dir.
-                
-                clean_filename = os.path.basename(first_letter.file_path)
-                # Construct URL strictly pointing to /uploads which finds file in either dir
-                file_url = f"{base_url}/uploads/{clean_filename}"
-                
-                cell_letter.value = f"{letter_count} File (Lihat)"
                 cell_letter.hyperlink = file_url
                 cell_letter.font = link_font
                 
@@ -551,7 +542,8 @@ def export_to_excel(request: Request, background_tasks: BackgroundTasks, current
         ws.column_dimensions['N'].width = 15
         
         # Save file
-        filename = f"Laporan_Tamu_Lengkap_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
+        # Save file with unique timestamp to prevent locking/permission issues
+        filename = f"Laporan_Tamu_Lengkap_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.xlsx"
         filepath = os.path.join(BACKUP_DIR, filename)
         wb.save(filepath)
         
@@ -1689,8 +1681,51 @@ def upload_task_letter(
         "status": "success", 
         "message": "Surat tugas berhasil diupload",
         "id": new_letter.id,
-        "remaining_slots": MAX_TASK_LETTERS_PER_VISIT - current_count - 1
     }
+
+@app.get("/visitors/{nik}/task-letters", tags=["Visitor"])
+def get_task_letters_for_visitor(nik: str, db: Session = Depends(get_db)):
+    """Get task letters for visitor's CURRENT active visit only (prevents mixing between visits)"""
+    # Find visitor
+    visitor = db.query(models.Visitor).filter(models.Visitor.nik == nik).first()
+    if not visitor:
+        raise HTTPException(404, "Visitor tidak ditemukan")
+    
+    # Find ACTIVE visit (checked in today, not checked out yet)
+    jakarta_tz = pytz.timezone('Asia/Jakarta')
+    now_jkt = datetime.now(jakarta_tz)
+    
+    active_visit = db.query(models.VisitLog).filter(
+        models.VisitLog.visitor_nik == nik,
+        models.VisitLog.visit_date == now_jkt.date(),
+        models.VisitLog.check_out_time == None
+    ).first()
+    
+    if not active_visit:
+        # No active visit - return empty documents
+        return {"documents": [], "visit_id": None, "status": "no_active_visit"}
+    
+    # Get task letters ONLY for this specific visit
+    letters = db.query(models.TaskLetter).filter(
+        models.TaskLetter.visit_id == active_visit.id
+    ).all()
+    
+    documents = [{
+        "id": l.id,
+        "filename": l.original_filename,
+        "stored_filename": os.path.basename(l.file_path),
+        "file_size": l.file_size,
+        "uploaded_at": l.uploaded_at.isoformat() if l.uploaded_at else None,
+        "type": "additional",
+        "visit_date": str(active_visit.visit_date)
+    } for l in letters]
+    
+    return {
+        "documents": documents, 
+        "visit_id": active_visit.id,
+        "status": "active_visit"
+    }
+
 
 @app.get("/visits/{visit_id}/task-letters", tags=["Visitor"])
 def get_task_letters(visit_id: int, db: Session = Depends(get_db)):
@@ -1732,6 +1767,39 @@ def download_task_letter(visit_id: int, letter_id: int, db: Session = Depends(ge
         letter.file_path,
         filename=letter.original_filename,
         media_type="application/pdf"
+    )
+
+@app.get("/visits/{visit_id}/task-letters/archive", tags=["Visitor"])
+def download_task_letters_archive(visit_id: int, db: Session = Depends(get_db)):
+    """Convert multiple task letters into a single ZIP file for download"""
+    visit = db.query(models.VisitLog).filter(models.VisitLog.id == visit_id).first()
+    if not visit:
+        raise HTTPException(404, "Data kunjungan tidak ditemukan")
+    
+    letters = db.query(models.TaskLetter).filter(models.TaskLetter.visit_id == visit_id).all()
+    if not letters:
+        raise HTTPException(404, "Tidak ada surat tugas untuk kunjungan ini")
+        
+    # Create in-memory ZIP
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+        for letter in letters:
+            if os.path.exists(letter.file_path):
+                # Ensure unique arcnames in zip
+                arcname = letter.original_filename
+                # Simple duplicate check - in production might need more robust handling
+                zip_file.write(letter.file_path, arcname=arcname)
+            else:
+                logger.warning(f"Skipping missing file in ZIP: {letter.file_path}")
+    
+    zip_buffer.seek(0)
+    
+    filename = f"Surat_Tugas_{visit.visitor_nik}_{visit.visit_date}.zip"
+    
+    return Response(
+        content=zip_buffer.getvalue(),
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
 @app.delete("/visits/{visit_id}/task-letters/{letter_id}", tags=["Visitor"])
