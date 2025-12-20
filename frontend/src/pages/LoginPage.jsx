@@ -132,7 +132,7 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
                                 rightIcon={<FaArrowRight />}
                                 width="full"
                             >
-                                Check In
+                                Login
                             </Button>
                         </VStack>
                     </FormControl>
