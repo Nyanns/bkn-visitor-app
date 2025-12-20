@@ -552,6 +552,12 @@ pip install -r requirements.txt --force-reinstall
 
 ## 📝 Changelog
 
+### v1.6.0 (December 20, 2025) - Master Data Export & Frontend Enhancements 📈
+#### New Features
+- ✅ **Master Data Export**: Added capability for Admins to export Room and Companion data to Excel.
+- ✅ **Frontend Stability**: Improved startup scripts and environment configuration.
+- ✅ **Documentation**: Updated technical documentation and dependency lists.
+
 ### v1.5.0 (December 12, 2025) - PostgreSQL & Auto Check-In 🚀
 #### Major Updates
 - ✅ **PostgreSQL Migration**: Switched database from SQLite to PostgreSQL for enterprise reliability.
@@ -683,8 +689,8 @@ This project is proprietary software developed for **BKN (Badan Kepegawaian Nega
 **Repository**: [github.com/Nyanns/bkn-visitor-app](https://github.com/Nyanns/bkn-visitor-app)  
 **Status**: ✅ **Production Ready**  
 **Overall Score**: **8.8/10 (Grade A)**  
-**Last Updated**: December 12, 2025  
-**Version**: 1.5.0
+**Last Updated**: December 20, 2025  
+**Version**: 1.6.0
 
 ### Scoring Breakdown
 | Category | Score | Status |

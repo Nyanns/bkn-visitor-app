@@ -12,7 +12,7 @@ import {
 import {
     FaSearch, FaSync, FaUserPlus, FaSignOutAlt, FaFileExcel,
     FaUsers, FaUserCheck, FaCalendarAlt, FaCheckCircle,
-    FaClock, FaChartLine, FaArrowRight, FaFilter
+    FaClock, FaChartLine, FaArrowRight, FaFilter, FaCog
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -273,6 +273,18 @@ function AdminDashboard() {
                         </Box>
                         <HStack spacing={3}>
                             <Button
+                                leftIcon={<FaCog />}
+                                variant="outline"
+                                colorScheme="purple"
+                                size="md"
+                                borderRadius="md"
+                                onClick={() => navigate('/admin/master-data')}
+                                fontWeight="600"
+                                bg="white"
+                            >
+                                Master Data
+                            </Button>
+                            <Button
                                 leftIcon={<FaChartLine />}
                                 variant="outline"
                                 colorScheme="blue"
@@ -514,7 +526,7 @@ function AdminDashboard() {
 
                     {/* Footer */}
                     <Text textAlign="center" mt={12} fontSize="xs" color="gray.400" fontWeight="500">
-                        &copy; 2025 BKN Visitor System • Direktorat INTIKAMI • v1.0
+                        &copy; 2025 BKN Visitor System • Direktorat INTIKAMI • v1.6.0
                     </Text>
 
                 </Container>

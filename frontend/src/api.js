@@ -8,18 +8,14 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
+    withCredentials: true // Enable sending Cookies
 });
 
 // --- INTERCEPTOR (Penyisip Token Otomatis) ---
+// Note: Authorization header is no longer needed with HttpOnly Cookies.
+// We keep the structure if we need other interceptors later.
 api.interceptors.request.use(
     (config) => {
-        // Ambil token dari penyimpanan lokal
-        const token = localStorage.getItem('adminToken');
-
-        // Jika token ada, tempelkan ke Header 'Authorization'
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
         return config;
     },
     (error) => Promise.reject(error)
@@ -41,5 +37,29 @@ api.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+
+// --- VISITOR MANAGEMENT ---
+api.updateVisitorPhoto = (nik, file) => {
+    const formData = new FormData();
+    formData.append('photo', file);
+    return api.put(`/visitors/${nik}/photo`, formData);
+};
+
+api.updateVisitorKtp = (nik, file) => {
+    const formData = new FormData();
+    formData.append('ktp', file);
+    return api.put(`/visitors/${nik}/ktp`, formData);
+};
+
+// --- TASK LETTERS ---
+api.getTaskLetters = (nik) => api.get(`/visitors/${nik}/task-letters`);
+
+api.uploadTaskLetter = (nik, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/visitors/${nik}/task-letters`, formData);
+};
+
+api.deleteTaskLetter = (nik, type, id) => api.delete(`/visitors/${nik}/task-letters/${type}/${id}`);
 
 export default api;
