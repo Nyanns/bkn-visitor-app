@@ -1,28 +1,42 @@
 // File: frontend/src/pages/DashboardPage.jsx
-// Google Material Design Style - Visitor Dashboard (Clean & Optimized)
+// Google Material Design Style - Visitor Dashboard with Visit Details Form
+
 import { useState, useEffect } from 'react';
 import {
     VStack, Button, Box, Text, Image, Flex, Heading, Avatar, Badge, HStack,
     Container, Accordion, AccordionItem, AccordionButton, AccordionPanel,
-    AccordionIcon, Divider, Skeleton, SkeletonCircle, Icon, useColorModeValue
+    AccordionIcon, Divider, Skeleton, Icon, useToast, Modal, ModalOverlay,
+    ModalContent, ModalCloseButton, useDisclosure
 } from '@chakra-ui/react';
-import { motion } from 'framer-motion';
-import { FaSignInAlt, FaSignOutAlt, FaArrowLeft, FaCheckCircle, FaClock, FaHistory } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    FaSignInAlt, FaSignOutAlt, FaArrowLeft, FaCheckCircle, FaClock,
+    FaHistory, FaDoorOpen, FaUserTie, FaClipboardList, FaFilePdf
+} from 'react-icons/fa';
 import bknLogo from '../assets/Logo_Badan_Kepegawaian_Negara.png';
 import api from '../api';
+import VisitDetailsForm from '../components/VisitDetailsForm';
+
+const MotionBox = motion(Box);
 
 function DashboardPage({
-    visitorData, handleBack, handleCheckIn, handleCheckOut,
-    loading, checkInStatus
+    visitorData, handleBack, handleCheckOut,
+    loading, checkInStatus, onCheckInSuccess
 }) {
+    const toast = useToast();
+    const { isOpen, onOpen, onClose } = useDisclosure();
+
     const [history, setHistory] = useState([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
+    const [activeVisit, setActiveVisit] = useState(null);
+    const [isCheckingIn, setIsCheckingIn] = useState(false);
 
     useEffect(() => {
         if (visitorData && visitorData.nik) {
             fetchHistory();
+            fetchActiveVisit();
         }
-    }, [visitorData]);
+    }, [visitorData, checkInStatus]);
 
     const fetchHistory = async () => {
         setLoadingHistory(true);
@@ -33,6 +47,101 @@ function DashboardPage({
             console.error("Failed to fetch history:", error);
         } finally {
             setLoadingHistory(false);
+        }
+    };
+
+    const fetchActiveVisit = async () => {
+        try {
+            const response = await api.get(`/visitors/${visitorData.nik}/active-visit`);
+            if (response.data.has_active_visit) {
+                setActiveVisit(response.data.visit);
+            } else {
+                setActiveVisit(null);
+            }
+        } catch (error) {
+            console.error("Failed to fetch active visit:", error);
+        }
+    };
+
+    // Open the check-in form modal
+    const handleCheckInClick = () => {
+        onOpen();
+    };
+
+    // Handle form submission (check-in with visit details)
+    const handleCheckInSubmit = async (formData) => {
+        setIsCheckingIn(true);
+        try {
+            // 1. Perform check-in with visit details
+            const checkInData = new FormData();
+            checkInData.append('nik', visitorData.nik);
+            checkInData.append('visit_purpose', formData.visit_purpose);
+            checkInData.append('room_id', formData.room_id);
+            checkInData.append('companion_id', formData.companion_id);
+
+            const response = await api.post('/check-in/', checkInData);
+
+            if (response.data.status === 'success') {
+                const visitId = response.data.visit_id;
+
+                // 2. Upload task letters if any
+                if (formData.task_letters && formData.task_letters.length > 0) {
+                    for (const file of formData.task_letters) {
+                        const fileData = new FormData();
+                        fileData.append('file', file);
+
+                        try {
+                            await api.post(`/visits/${visitId}/task-letters`, fileData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                            });
+                        } catch (uploadError) {
+                            console.error('Failed to upload task letter:', uploadError);
+                            toast({
+                                title: 'Upload Error',
+                                description: `Gagal upload ${file.name}`,
+                                status: 'warning',
+                                duration: 3000,
+                            });
+                        }
+                    }
+                }
+
+                toast({
+                    title: 'Check-In Berhasil!',
+                    description: response.data.message,
+                    status: 'success',
+                    duration: 4000,
+                });
+
+                onClose();
+
+                // Notify parent to refresh status
+                if (onCheckInSuccess) {
+                    onCheckInSuccess();
+                }
+
+                // Refresh local data
+                fetchActiveVisit();
+                fetchHistory();
+            } else if (response.data.status === 'info') {
+                toast({
+                    title: 'Sudah Check-In',
+                    description: response.data.message,
+                    status: 'info',
+                    duration: 3000,
+                });
+                onClose();
+            }
+        } catch (error) {
+            console.error('Check-in failed:', error);
+            toast({
+                title: 'Check-In Gagal',
+                description: error.response?.data?.detail || 'Terjadi kesalahan',
+                status: 'error',
+                duration: 4000,
+            });
+        } finally {
+            setIsCheckingIn(false);
         }
     };
 
@@ -105,7 +214,7 @@ function DashboardPage({
                                             <Box
                                                 position="absolute"
                                                 bottom="4px" right="4px"
-                                                bg={checkInStatus ? "#34a853" : "#fbbc04"} // Google Green / Yellow
+                                                bg={checkInStatus ? "#34a853" : "#fbbc04"}
                                                 borderRadius="full"
                                                 border="3px solid white"
                                                 p="6px"
@@ -155,7 +264,7 @@ function DashboardPage({
                                                 color={!checkInStatus ? "white" : "gray.400"}
                                                 _hover={!checkInStatus ? { bg: "#1557b0", boxShadow: "md" } : {}}
                                                 borderRadius="12px"
-                                                onClick={handleCheckIn}
+                                                onClick={handleCheckInClick}
                                                 isLoading={loading}
                                                 isDisabled={checkInStatus}
                                                 justifyContent="center"
@@ -192,6 +301,75 @@ function DashboardPage({
                                 </Box>
                             </Flex>
                         </Box>
+
+                        {/* Active Visit Details Card */}
+                        <AnimatePresence>
+                            {checkInStatus && activeVisit && (
+                                <MotionBox
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    bg="white"
+                                    borderRadius="16px"
+                                    boxShadow="0 1px 3px 0 rgba(0,0,0,0.1)"
+                                    border="1px solid"
+                                    borderColor="green.200"
+                                    overflow="hidden"
+                                >
+                                    <Box bg="green.50" px={6} py={3}>
+                                        <HStack spacing={2}>
+                                            <Icon as={FaCheckCircle} color="green.500" />
+                                            <Text fontWeight="600" color="green.700">Detail Kunjungan Aktif</Text>
+                                        </HStack>
+                                    </Box>
+                                    <VStack spacing={4} p={6} align="stretch">
+                                        {/* Visit Purpose */}
+                                        {activeVisit.visit_purpose && (
+                                            <HStack align="start" spacing={3}>
+                                                <Icon as={FaClipboardList} color="blue.500" mt={1} />
+                                                <Box>
+                                                    <Text fontSize="xs" color="gray.500" fontWeight="500">Tujuan</Text>
+                                                    <Text fontSize="sm" color="gray.700">{activeVisit.visit_purpose}</Text>
+                                                </Box>
+                                            </HStack>
+                                        )}
+
+                                        {/* Room */}
+                                        {activeVisit.room && (
+                                            <HStack align="start" spacing={3}>
+                                                <Icon as={FaDoorOpen} color="green.500" mt={1} />
+                                                <Box>
+                                                    <Text fontSize="xs" color="gray.500" fontWeight="500">Ruangan</Text>
+                                                    <Text fontSize="sm" color="gray.700">{activeVisit.room.name}</Text>
+                                                </Box>
+                                            </HStack>
+                                        )}
+
+                                        {/* Companion */}
+                                        {activeVisit.companion && (
+                                            <HStack align="start" spacing={3}>
+                                                <Icon as={FaUserTie} color="purple.500" mt={1} />
+                                                <Box>
+                                                    <Text fontSize="xs" color="gray.500" fontWeight="500">Pendamping</Text>
+                                                    <Text fontSize="sm" color="gray.700">{activeVisit.companion.name}</Text>
+                                                </Box>
+                                            </HStack>
+                                        )}
+
+                                        {/* Task Letters Count */}
+                                        {activeVisit.task_letters_count > 0 && (
+                                            <HStack align="start" spacing={3}>
+                                                <Icon as={FaFilePdf} color="red.500" mt={1} />
+                                                <Box>
+                                                    <Text fontSize="xs" color="gray.500" fontWeight="500">Surat Tugas</Text>
+                                                    <Text fontSize="sm" color="gray.700">{activeVisit.task_letters_count} file</Text>
+                                                </Box>
+                                            </HStack>
+                                        )}
+                                    </VStack>
+                                </MotionBox>
+                            )}
+                        </AnimatePresence>
 
                         {/* Visitor History (Clean List) */}
                         <Box
@@ -253,8 +431,25 @@ function DashboardPage({
             </Container>
 
             <Flex w="full" justify="center" py={6}>
-                <Text fontSize="11px" color="#9aa0a6">&copy; 2025 BKN - Direktorat INTIKAMI</Text>
+                <Text fontSize="11px" color="#9aa0a6">&copy; 2025 BKN Visitor System • Direktorat INTIKAMI • v1.6.0</Text>
             </Flex>
+
+            {/* Check-In Form Modal */}
+            <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
+                <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(4px)" />
+                <ModalContent
+                    bg="transparent"
+                    boxShadow="none"
+                    maxW="500px"
+                    mx={4}
+                >
+                    <VisitDetailsForm
+                        onSubmit={handleCheckInSubmit}
+                        onCancel={onClose}
+                        isLoading={isCheckingIn}
+                    />
+                </ModalContent>
+            </Modal>
         </Box>
     );
 }

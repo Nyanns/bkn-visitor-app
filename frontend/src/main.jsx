@@ -11,6 +11,7 @@ const AdminPage = lazy(() => import('./pages/AdminPage.jsx'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard.jsx'))
 const AdminVisitorDetail = lazy(() => import('./pages/AdminVisitorDetail.jsx'))
 const AdminAnalytics = lazy(() => import('./pages/AdminAnalytics.jsx'))
+const AdminMasterDataPage = lazy(() => import('./pages/AdminMasterDataPage.jsx'))
 const ProtectedRoute = lazy(() => import('./components/ProtectedRoute.jsx'))
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -57,6 +58,12 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="/admin/analytics" element={
               <ProtectedRoute>
                 <AdminAnalytics />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/admin/master-data" element={
+              <ProtectedRoute>
+                <AdminMasterDataPage />
               </ProtectedRoute>
             } />
 

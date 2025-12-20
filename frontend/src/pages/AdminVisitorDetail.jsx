@@ -13,7 +13,8 @@ import {
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     FaArrowLeft, FaTrash, FaSave, FaUser, FaBuilding, FaPhone,
-    FaHistory, FaEdit, FaCalendarAlt, FaClock, FaSignOutAlt
+    FaHistory, FaEdit, FaCalendarAlt, FaClock, FaSignOutAlt,
+    FaIdCard, FaFilePdf, FaPlus, FaCloudUploadAlt, FaDownload, FaCamera
 } from 'react-icons/fa';
 import api from '../api';
 import AuthenticatedImage from '../components/AuthenticatedImage';
@@ -29,6 +30,12 @@ function AdminVisitorDetail() {
     // Data State
     const [visitor, setVisitor] = useState(null);
     const [history, setHistory] = useState([]);
+    const [documents, setDocuments] = useState([]); // Task letters
+
+    // Refs for file uploads
+    const photoInputRef = useRef();
+    const ktpInputRef = useRef();
+    const letterInputRef = useRef();
 
     // Form Data
     const [fullName, setFullName] = useState('');
@@ -70,6 +77,14 @@ function AdminVisitorDetail() {
             } finally {
                 setLoading(false);
             }
+
+            // Fetch Documents (Task Letters)
+            try {
+                const docsRes = await api.getTaskLetters(nik);
+                setDocuments(docsRes.data.documents || []);
+            } catch (err) {
+                console.error("Failed to fetch documents", err);
+            }
         };
         fetchData();
     }, [nik, navigate, toast]);
@@ -101,6 +116,80 @@ function AdminVisitorDetail() {
             navigate('/admin/dashboard');
         } catch (error) {
             toast({ title: "Gagal menghapus data", description: error.response?.data?.detail, status: "error", position: "top" });
+        }
+    };
+
+    // --- UPLOAD HANDLERS ---
+    const handlePhotoUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Basic validation
+        if (file.size > 5 * 1024 * 1024) {
+            toast({ title: "File too large (max 5MB)", status: "error" });
+            return;
+        }
+
+        setSaving(true);
+        try {
+            await api.updateVisitorPhoto(nik, file);
+            toast({ title: "Foto berhasil diperbarui", status: "success" });
+            // Refresh visitor data
+            const res = await api.get(`/visitors/${nik}`);
+            setVisitor(res.data);
+        } catch (error) {
+            toast({ title: "Gagal upload foto", status: "error" });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleKtpUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setSaving(true);
+        try {
+            await api.updateVisitorKtp(nik, file);
+            toast({ title: "KTP berhasil diperbarui", status: "success" });
+            // Refresh visitor data
+            const res = await api.get(`/visitors/${nik}`);
+            setVisitor(res.data);
+        } catch (error) {
+            toast({ title: "Gagal upload KTP", status: "error" });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleLetterUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setSaving(true);
+        try {
+            await api.uploadTaskLetter(nik, file);
+            toast({ title: "Surat Tugas berhasil diupload", status: "success" });
+
+            // Refresh documents
+            const docsRes = await api.getTaskLetters(nik);
+            setDocuments(docsRes.data.documents || []);
+        } catch (error) {
+            toast({ title: "Gagal upload surat tugas", description: error.response?.data?.detail, status: "error" });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDeleteLetter = async (type, id) => {
+        try {
+            await api.deleteTaskLetter(nik, type, id);
+            toast({ title: "Dokumen dihapus", status: "success" });
+            // Refresh documents
+            const docsRes = await api.getTaskLetters(nik);
+            setDocuments(docsRes.data.documents || []);
+        } catch (error) {
+            toast({ title: "Gagal hapus dokumen", status: "error" });
         }
     };
 
@@ -216,7 +305,28 @@ function AdminVisitorDetail() {
                                             boxShadow="lg"
                                             position="relative"
                                             bg="gray.100"
+                                            cursor="pointer"
+                                            onClick={() => photoInputRef.current.click()}
+                                            _hover={{ opacity: 0.8 }}
                                         >
+                                            {/* Hidden Input */}
+                                            <input
+                                                type="file"
+                                                ref={photoInputRef}
+                                                style={{ display: 'none' }}
+                                                accept="image/*"
+                                                onChange={handlePhotoUpload}
+                                            />
+
+                                            {/* Overlay Icon on Hover */}
+                                            <Center
+                                                position="absolute" top="0" left="0" right="0" bottom="0"
+                                                bg="blackAlpha.400" opacity="0"
+                                                _hover={{ opacity: 1 }} transition="all 0.2s"
+                                                zIndex="2"
+                                            >
+                                                <Icon as={FaCamera} color="white" boxSize={8} />
+                                            </Center>
                                             {visitor?.photo_path ? (
                                                 <AuthenticatedImage
                                                     filename={visitor.photo_path.split(/[/\\]/).pop()}
@@ -268,6 +378,9 @@ function AdminVisitorDetail() {
                                     </Tab>
                                     <Tab fontWeight="600" fontSize="sm" _selected={{ color: '#1a73e8', borderColor: 'gray.200', borderBottomColor: pageBg, bg: pageBg }}>
                                         <Icon as={FaHistory} mr={2} /> Visit History
+                                    </Tab>
+                                    <Tab fontWeight="600" fontSize="sm" _selected={{ color: '#1a73e8', borderColor: 'gray.200', borderBottomColor: pageBg, bg: pageBg }}>
+                                        <Icon as={FaFilePdf} mr={2} /> Documents
                                     </Tab>
                                 </TabList>
 
@@ -398,6 +511,118 @@ function AdminVisitorDetail() {
                                                 </Table>
                                             </Box>
                                         </Card>
+                                    </TabPanel>
+
+                                    {/* Tab 3: Documents (KTP & Task Letters) */}
+                                    <TabPanel p={0}>
+                                        <VStack spacing={6} align="stretch">
+                                            {/* KTP Section */}
+                                            <Card bg={cardBg} borderRadius="xl" boxShadow="sm" border="1px solid" borderColor={borderColor}>
+                                                <CardBody p={6}>
+                                                    <HStack justify="space-between" mb={4}>
+                                                        <HStack>
+                                                            <Icon as={FaIdCard} color="blue.500" boxSize={5} />
+                                                            <Heading size="sm" color="gray.700">Kartu Identitas (KTP)</Heading>
+                                                        </HStack>
+                                                        <Button
+                                                            size="sm" leftIcon={<FaCloudUploadAlt />}
+                                                            onClick={() => ktpInputRef.current.click()}
+                                                            isLoading={saving}
+                                                        >
+                                                            Upload KTP
+                                                        </Button>
+                                                        <input type="file" ref={ktpInputRef} style={{ display: 'none' }} accept="image/*,.pdf" onChange={handleKtpUpload} />
+                                                    </HStack>
+
+                                                    {visitor?.ktp_path ? (
+                                                        <Box
+                                                            borderRadius="lg" overflow="hidden" border="1px solid" borderColor="gray.200"
+                                                            maxH="300px" bg="gray.50" display="flex" justifyContent="center" alignItems="center"
+                                                        >
+                                                            {visitor.ktp_path.toLowerCase().endsWith('.pdf') ? (
+                                                                <Button
+                                                                    as="a"
+                                                                    href={`/api/uploads/${visitor.ktp_path.split(/[/\\]/).pop()}`}
+                                                                    target="_blank"
+                                                                    colorScheme="red" variant="outline" leftIcon={<FaFilePdf />} mt={4} mb={4}
+                                                                >
+                                                                    View KTP (PDF)
+                                                                </Button>
+                                                            ) : (
+                                                                <AuthenticatedImage
+                                                                    filename={visitor.ktp_path.split(/[/\\]/).pop()}
+                                                                    maxH="300px" objectFit="contain"
+                                                                />
+                                                            )}
+                                                        </Box>
+                                                    ) : (
+                                                        <Center p={8} border="2px dashed" borderColor="gray.200" borderRadius="lg" bg="gray.50">
+                                                            <Text color="gray.400">Belum ada KTP diupload</Text>
+                                                        </Center>
+                                                    )}
+                                                </CardBody>
+                                            </Card>
+
+                                            {/* Task Letters Section */}
+                                            <Card bg={cardBg} borderRadius="xl" boxShadow="sm" border="1px solid" borderColor={borderColor}>
+                                                <CardBody p={6}>
+                                                    <HStack justify="space-between" mb={4}>
+                                                        <HStack>
+                                                            <Icon as={FaFilePdf} color="red.500" boxSize={5} />
+                                                            <Heading size="sm" color="gray.700">Surat Tugas</Heading>
+                                                        </HStack>
+                                                        <Button
+                                                            size="sm" leftIcon={<FaPlus />} colorScheme="blue" variant="outline"
+                                                            onClick={() => letterInputRef.current.click()}
+                                                            isLoading={saving}
+                                                        >
+                                                            Tambah Surat
+                                                        </Button>
+                                                        <input type="file" ref={letterInputRef} style={{ display: 'none' }} accept=".pdf" onChange={handleLetterUpload} />
+                                                    </HStack>
+
+                                                    {documents.length === 0 ? (
+                                                        <Center p={8} border="2px dashed" borderColor="gray.200" borderRadius="lg" bg="gray.50">
+                                                            <Text color="gray.400">Tidak ada surat tugas</Text>
+                                                        </Center>
+                                                    ) : (
+                                                        <VStack spacing={3} align="stretch">
+                                                            {documents.map((doc, idx) => (
+                                                                <Flex
+                                                                    key={idx} p={3} bg="gray.50" borderRadius="lg" border="1px solid" borderColor="gray.200"
+                                                                    justify="space-between" align="center"
+                                                                >
+                                                                    <HStack>
+                                                                        <Icon as={FaFilePdf} color="red.500" />
+                                                                        <Box>
+                                                                            <Text fontSize="sm" fontWeight="600">{doc.filename}</Text>
+                                                                            <Text fontSize="xs" color="gray.500">
+                                                                                {new Date(doc.uploaded_at).toLocaleDateString()}
+                                                                                {doc.type === 'additional' && doc.visit_date && ` • Visit: ${doc.visit_date}`}
+                                                                            </Text>
+                                                                        </Box>
+                                                                    </HStack>
+                                                                    <HStack>
+                                                                        <Button
+                                                                            as="a" size="xs" colorScheme="blue" variant="ghost" leftIcon={<FaDownload />}
+                                                                            href={`/api/uploads/${doc.filename}`} target="_blank"
+                                                                        >
+                                                                            Download
+                                                                        </Button>
+                                                                        <Button
+                                                                            size="xs" colorScheme="red" variant="ghost" leftIcon={<FaTrash />}
+                                                                            onClick={() => handleDeleteLetter(doc.type, doc.id)}
+                                                                        >
+                                                                            Hapus
+                                                                        </Button>
+                                                                    </HStack>
+                                                                </Flex>
+                                                            ))}
+                                                        </VStack>
+                                                    )}
+                                                </CardBody>
+                                            </Card>
+                                        </VStack>
                                     </TabPanel>
                                 </TabPanels>
                             </Tabs>

@@ -91,40 +91,14 @@ function App() {
     }
   };
 
-  // --- LOGIC: CHECK-IN ---
-  const handleCheckIn = async () => {
-    setLoading(true);
+  // --- LOGIC: CHECK-IN SUCCESS (Called from DashboardPage after successful check-in) ---
+  const refreshAfterCheckIn = async () => {
     try {
-      const formData = new FormData();
-      formData.append('nik', nik);
-      const response = await api.post('/check-in/', formData);
-
-      // Show success with timestamp
-      const checkInTime = response.data.time || new Date().toLocaleTimeString('id-ID');
-      toast({
-        title: "Check-In Berhasil!",
-        description: `Waktu check-in: ${checkInTime} WIB`,
-        status: "success",
-        position: "top",
-        duration: 4000,
-        isClosable: true
-      });
-      setCheckInStatus(true);
-
-      // Refresh visitor data to update check-in time display
-      const visitorResponse = await api.get(`/visitors/${nik}`);
-      setVisitorData(visitorResponse.data);
+      const response = await api.get(`/visitors/${nik}`);
+      setVisitorData(response.data);
+      setCheckInStatus(response.data.is_checked_in);
     } catch (error) {
-      // Cek error khusus "sudah masuk"
-      const msg = error.response?.data?.detail || "";
-      if (msg.includes("masih di dalam") || msg.includes("sudah tercatat")) {
-        setCheckInStatus(true);
-        toast({ title: "Anda sudah tercatat masuk", status: "info", position: "top", duration: 3000, isClosable: true });
-      } else {
-        toast({ title: "Gagal Check-In", description: msg, status: "error", position: "top", duration: 3000, isClosable: true });
-      }
-    } finally {
-      setLoading(false);
+      console.error('Failed to refresh visitor data:', error);
     }
   };
 
@@ -208,10 +182,10 @@ function App() {
         <DashboardPage
           visitorData={visitorData}
           handleBack={handleBack}
-          handleCheckIn={handleCheckIn}
           handleCheckOut={confirmCheckOut}
           checkInStatus={checkInStatus}
           loading={loading}
+          onCheckInSuccess={refreshAfterCheckIn}
         />
       )}
 

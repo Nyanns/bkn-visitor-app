@@ -1,7 +1,7 @@
 # 📘 Technical Documentation
 **Project**: BKN Visitor Management System  
-**Generated Date**: December 9, 2025  
-**Version**: 1.4.2
+**Generated Date**: December 20, 2025  
+**Version**: 1.6.0
 
 ---
 
@@ -23,6 +23,7 @@ usecaseDiagram
         usecase "Export Data (Excel)" as UC6
         usecase "Manual Check-Out" as UC7
         usecase "Register Visitor" as UC8
+        usecase "Manage Master Data" as UC9
     }
 
     Visitor --> UC1
@@ -34,6 +35,7 @@ usecaseDiagram
     Admin --> UC6
     Admin --> UC7
     Admin --> UC8
+    Admin --> UC9
     Admin --> UC3
 ```
 
@@ -59,7 +61,8 @@ flowchart TD
     Validate -- Ada --> StatusCheck{Cek Status Kunjungan}
     
     StatusCheck -- Belum Masuk --> CheckIn[Proses Check-In]
-    CheckIn --> SaveLog[Simpan Log Check-In]
+    CheckIn --> Select[Pilih Ruangan & Pendamping]
+    Select --> SaveLog[Simpan Log Check-In]
     SaveLog --> SuccessIn[Tampilkan 'Selamat Datang']
     SuccessIn --> Stop([End])
     
@@ -81,7 +84,7 @@ sequenceDiagram
     participant A as API (Backend)
     participant D as Database
 
-    U->>A: POST /check-in/ (NIK)
+    U->>A: POST /check-in/ (NIK, RoomID, CompID)
     activate A
     A->>D: Query Visitor by NIK
     activate D
@@ -104,7 +107,7 @@ sequenceDiagram
             U->>U: Show "Anda Sudah Check-In"
         end
 
-        A->>D: Insert VisitLog (CheckIn Time)
+        A->>D: Insert VisitLog (CheckIn Time, Room, Comp)
         activate D
         D-->>A: Confirm Insert
         deactivate D
@@ -125,6 +128,9 @@ Relasi antar tabel dalam database.
 erDiagram
     VISITORS ||--o{ VISIT_LOGS : "makes"
     ADMINS ||--|| VISIT_LOGS : "manages (implicit)"
+    VISIT_LOGS }o--|| ROOMS : "occurs in"
+    VISIT_LOGS }o--|| COMPANIONS : "accompanied by"
+    VISIT_LOGS ||--o{ TASK_LETTERS : "has"
 
     VISITORS {
         string nik PK "Unique ID (16 chars)"
@@ -133,15 +139,40 @@ erDiagram
         string phone "No. HP"
         string photo_path "Path Foto Wajah"
         string ktp_path "Path Foto KTP"
-        string task_letter_path "Path Surat Tugas"
+        string task_letter_path "Path Surat Tugas (Legacy)"
         datetime created_at
     }
 
     VISIT_LOGS {
         int id PK
         string visitor_nik FK
+        int room_id FK "Nullable"
+        int companion_id FK "Nullable"
+        text visit_purpose
         datetime check_in_time "UTC Time"
         datetime check_out_time "UTC Time (Nullable)"
+    }
+
+    ROOMS {
+        int id PK
+        string name
+        string description
+        boolean is_active
+    }
+
+    COMPANIONS {
+        int id PK
+        string name
+        string position
+        boolean is_active
+    }
+    
+    TASK_LETTERS {
+        int id PK
+        int visit_id FK
+        string file_path
+        string original_filename
+        int file_size
     }
 
     ADMINS {
@@ -166,16 +197,43 @@ Detail teknis tipe data (mengacu pada SQLAlchemy Models).
 | `phone` | `VARCHAR` | NULLABLE | Nomor Telepon |
 | `photo_path` | `VARCHAR` | NULLABLE | Lokasi file foto profil |
 | `ktp_path` | `VARCHAR` | NULLABLE | Lokasi file scan KTP |
-| `task_letter_path` | `VARCHAR` | NULLABLE | Lokasi file surat tugas |
+| `task_letter_path` | `VARCHAR` | NULLABLE | Legacy (sekarang per visit) |
 | `created_at` | `DATETIME` | DEFAULT NOW | Tanggal registrasi |
+
+### Tabel `rooms` (Master Data)
+| Field | Tipe Data | Constraint | Deskripsi |
+| :--- | :--- | :--- | :--- |
+| `id` | `INTEGER` | **PRIMARY KEY**, AI | ID Ruangan |
+| `name` | `VARCHAR` | NOT NULL | Nama Ruangan/Gedung |
+| `description` | `VARCHAR` | NULLABLE | Deskripsi Ruangan |
+| `is_active` | `BOOLEAN` | DEFAULT TRUE | Status Aktif |
+
+### Tabel `companions` (Master Data)
+| Field | Tipe Data | Constraint | Deskripsi |
+| :--- | :--- | :--- | :--- |
+| `id` | `INTEGER` | **PRIMARY KEY**, AI | ID Pendamping |
+| `name` | `VARCHAR` | NOT NULL | Nama Pendamping |
+| `position` | `VARCHAR` | NULLABLE | Jabatan/Posisi |
+| `is_active` | `BOOLEAN` | DEFAULT TRUE | Status Aktif |
 
 ### Tabel `visit_logs`
 | Field | Tipe Data | Constraint | Deskripsi |
 | :--- | :--- | :--- | :--- |
 | `id` | `INTEGER` | **PRIMARY KEY**, AI | ID Unik Kunjungan |
 | `visitor_nik` | `VARCHAR(16)` | **FOREIGN KEY** | Referensi ke `visitors.nik` |
+| `room_id` | `INTEGER` | **FOREIGN KEY** | Referensi ke `rooms.id` |
+| `companion_id` | `INTEGER` | **FOREIGN KEY** | Referensi ke `companions.id` |
+| `visit_purpose` | `TEXT` | NULLABLE | Tujuan Kunjungan |
 | `check_in_time` | `DATETIME` | NOT NULL | Waktu Masuk (disimpan dalam UTC) |
 | `check_out_time` | `DATETIME` | NULLABLE | Waktu Keluar (disimpan dalam UTC) |
+
+### Tabel `task_letters`
+| Field | Tipe Data | Constraint | Deskripsi |
+| :--- | :--- | :--- | :--- |
+| `id` | `INTEGER` | **PRIMARY KEY**, AI | ID Surat Tugas |
+| `visit_id` | `INTEGER` | **FOREIGN KEY** | ID Kunjungan |
+| `file_path` | `VARCHAR` | NOT NULL | Lokasi File |
+| `original_filename`| `VARCHAR` | NOT NULL | Nama Asli File |
 
 ### Tabel `admins`
 | Field | Tipe Data | Constraint | Deskripsi |

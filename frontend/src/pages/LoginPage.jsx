@@ -138,7 +138,7 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
                     </FormControl>
 
                     <Text fontSize="xs" color="#9aa0a6" w="full" textAlign="center" pt={8}>
-                        &copy; 2025 BKN - Direktorat INTIKAMI
+                        &copy; 2025 BKN Visitor System • Direktorat INTIKAMI • v1.6.0
                     </Text>
                 </VStack>
             </Flex>
