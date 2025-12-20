@@ -54,12 +54,12 @@ api.updateVisitorKtp = (nik, file) => {
 // --- TASK LETTERS ---
 api.getTaskLetters = (nik) => api.get(`/visitors/${nik}/task-letters`);
 
-api.uploadTaskLetter = (nik, file) => {
+api.uploadTaskLetter = (visitId, file) => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post(`/visitors/${nik}/task-letters`, formData);
+    return api.post(`/visits/${visitId}/task-letters`, formData);
 };
 
-api.deleteTaskLetter = (nik, type, id) => api.delete(`/visitors/${nik}/task-letters/${type}/${id}`);
+api.deleteTaskLetter = (visitId, letterId) => api.delete(`/visits/${visitId}/task-letters/${letterId}`);
 
 export default api;

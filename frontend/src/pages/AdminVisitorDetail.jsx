@@ -31,6 +31,7 @@ function AdminVisitorDetail() {
     const [visitor, setVisitor] = useState(null);
     const [history, setHistory] = useState([]);
     const [documents, setDocuments] = useState([]); // Task letters
+    const [activeVisitId, setActiveVisitId] = useState(null); // Current active visit ID
 
     // Refs for file uploads
     const photoInputRef = useRef();
@@ -78,10 +79,11 @@ function AdminVisitorDetail() {
                 setLoading(false);
             }
 
-            // Fetch Documents (Task Letters)
+            // Fetch Documents (Task Letters) - now returns active visit letters only
             try {
                 const docsRes = await api.getTaskLetters(nik);
                 setDocuments(docsRes.data.documents || []);
+                setActiveVisitId(docsRes.data.visit_id); // Store active visit ID
             } catch (err) {
                 console.error("Failed to fetch documents", err);
             }
@@ -166,9 +168,14 @@ function AdminVisitorDetail() {
         const file = e.target.files[0];
         if (!file) return;
 
+        if (!activeVisitId) {
+            toast({ title: "No active visit", description: "Please check in first before uploading task letters", status: "warning" });
+            return;
+        }
+
         setSaving(true);
         try {
-            await api.uploadTaskLetter(nik, file);
+            await api.uploadTaskLetter(activeVisitId, file);
             toast({ title: "Surat Tugas berhasil diupload", status: "success" });
 
             // Refresh documents
@@ -181,9 +188,14 @@ function AdminVisitorDetail() {
         }
     };
 
-    const handleDeleteLetter = async (type, id) => {
+    const handleDeleteLetter = async (letterId) => {
+        if (!activeVisitId) {
+            toast({ title: "Error", description: "No active visit found", status: "error" });
+            return;
+        }
+
         try {
-            await api.deleteTaskLetter(nik, type, id);
+            await api.deleteTaskLetter(activeVisitId, letterId);
             toast({ title: "Dokumen dihapus", status: "success" });
             // Refresh documents
             const docsRes = await api.getTaskLetters(nik);
@@ -611,7 +623,7 @@ function AdminVisitorDetail() {
                                                                         </Button>
                                                                         <Button
                                                                             size="xs" colorScheme="red" variant="ghost" leftIcon={<FaTrash />}
-                                                                            onClick={() => handleDeleteLetter(doc.type, doc.id)}
+                                                                            onClick={() => handleDeleteLetter(doc.id)}
                                                                         >
                                                                             Hapus
                                                                         </Button>

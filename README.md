@@ -552,6 +552,15 @@ pip install -r requirements.txt --force-reinstall
 
 ## 📝 Changelog
 
+### v1.6.2 (December 20, 2025) - Task Letter Enhancements 📁
+#### New Features
+- ✅ **ZIP Download**: Multiple task letters can now be downloaded as a single ZIP archive from Excel export.
+- ✅ **Task Letter Isolation**: Task letters are now scoped per visit/check-in, preventing mixing between different visits.
+- ✅ **Active Visit Context**: API now properly filters documents based on the visitor's current active visit.
+
+#### Bug Fixes
+- ✅ **Unique Excel Filenames**: Export filenames now include timestamp to prevent file locking errors.
+
 ### v1.6.1 (December 20, 2025) - Fixes & Cleanup 🛠️
 #### Bug Fixes
 - ✅ **Task Letter Download Fix**: Resolved 404 error by correctly mapping file requests to stored UUID filenames (`/uploads/{filename}`).
@@ -697,7 +706,7 @@ This project is proprietary software developed for **BKN (Badan Kepegawaian Nega
 **Status**: ✅ **Production Ready**  
 **Overall Score**: **8.8/10 (Grade A)**  
 **Last Updated**: December 20, 2025  
-**Version**: 1.6.1
+**Version**: 1.6.2
 
 ### Scoring Breakdown
 | Category | Score | Status |
