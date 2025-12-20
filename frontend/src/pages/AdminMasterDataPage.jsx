@@ -46,21 +46,8 @@ function AdminMasterDataPage() {
         navigate('/admin/login');
     };
 
-    const handleExportMasterData = async () => {
-        try {
-            const response = await api.get('/admin/export-master-data', { responseType: 'blob' });
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `Master_Data_BKN_${new Date().toISOString().split('T')[0]}.xlsx`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            toast({ title: "Master Data berhasil diexport!", status: "success", position: "top" });
-        } catch (error) {
-            toast({ title: "Gagal export Excel", status: "error", position: "top" });
-        }
-    };
+
+
 
     return (
         <Box bg="#f8f9fa" minH="100vh" fontFamily="'Inter', sans-serif">
@@ -86,16 +73,8 @@ function AdminMasterDataPage() {
                     </HStack>
 
                     <HStack spacing={3}>
-                        <Button
-                            leftIcon={<FaFileExcel />}
-                            variant="solid"
-                            colorScheme="green"
-                            size="sm"
-                            borderRadius="full"
-                            onClick={handleExportMasterData}
-                        >
-                            Export Excel
-                        </Button>
+
+
                         <Button
                             leftIcon={<FaArrowLeft />}
                             variant="outline"
