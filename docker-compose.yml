@@ -1,11 +1,18 @@
+# ========================================
+# BKN Visitor Management System - Docker Compose
+# ========================================
+# PENTING: Sebelum menjalankan docker-compose, pastikan file .env sudah ada!
+# Copy dari .env.docker.example dan isi dengan nilai yang aman.
+# ========================================
+
 services:
   # Database Service (PostgreSQL)
   db:
     image: postgres:15-alpine
     container_name: bkn_db
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-bkn_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bkn_password}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in .env}
       POSTGRES_DB: ${POSTGRES_DB:-bkn_visitor}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -15,7 +22,7 @@ services:
       - bkn_network
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U bkn_user -d bkn_visitor" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-bkn_visitor}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -25,8 +32,8 @@ services:
     build: ./backend
     container_name: bkn_backend
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-bkn_user}:${POSTGRES_PASSWORD:-bkn_password}@db:5432/${POSTGRES_DB:-bkn_visitor}
-      - SECRET_KEY=${SECRET_KEY:-simple_secret_key_change_in_production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-bkn_visitor}
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required in .env}
     volumes:
       - ./backend/uploads:/app/uploads
     ports:
