@@ -36,6 +36,8 @@ services:
       - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required in .env}
     volumes:
       - ./backend/uploads:/app/uploads
+      - ./backend/task_letters:/app/task_letters
+      - ./backend/logs:/app/logs
     ports:
       - "8000:8000"
     depends_on:

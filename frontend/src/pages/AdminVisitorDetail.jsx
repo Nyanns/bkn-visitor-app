@@ -169,7 +169,7 @@ function AdminVisitorDetail() {
         if (!file) return;
 
         if (!activeVisitId) {
-            toast({ title: "No active visit", description: "Please check in first before uploading task letters", status: "warning" });
+            toast({ title: "Tidak ada kunjungan aktif", description: "Pengunjung harus check-in terlebih dahulu sebelum upload surat tugas", status: "warning" });
             return;
         }
 
