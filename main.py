@@ -1099,12 +1099,24 @@ def update_visitor_ktp(
     
     return {"status": "success", "message": "Foto KTP berhasil diperbarui", "path": new_path}
 
-# 3. GET TASK LETTERS
+# 3. GET TASK LETTERS (returns active visit id for upload support)
 @app.get("/visitors/{nik}/task-letters", tags=["Admin"])
 def get_task_letters(nik: str, db: Session = Depends(get_db)):
+    """Get task letters for visitor and return active visit_id if available for upload"""
     visitor = db.query(models.Visitor).filter(models.Visitor.nik == nik).first()
     if not visitor:
         raise HTTPException(status_code=404, detail="Visitor not found")
+    
+    # Find ACTIVE visit (any visit that hasn't checked out yet, regardless of date)
+    # This allows admin to add task letters even if visitor checked in yesterday but forgot to checkout
+    active_visit = db.query(models.VisitLog).filter(
+        models.VisitLog.visitor_nik == nik,
+        models.VisitLog.check_out_time == None
+    ).order_by(models.VisitLog.check_in_time.desc()).first()
+    
+    # Determine visit_id to return (for upload support)
+    visit_id = active_visit.id if active_visit else None
+    status = "active_visit" if active_visit else "no_active_visit"
         
     documents = []
     
@@ -1118,25 +1130,25 @@ def get_task_letters(nik: str, db: Session = Depends(get_db)):
             "uploaded_at": visitor.created_at,
             "path": visitor.task_letter_path
         })
+    
+    # B. Get Task Letters for current active visit only (if any)
+    if active_visit:
+        letters = db.query(models.TaskLetter).filter(
+            models.TaskLetter.visit_id == active_visit.id
+        ).order_by(models.TaskLetter.uploaded_at.desc()).all()
         
-    # B. Additional Task Letters (from TaskLetter table)
-    # Join with VisitLog to allow filtering/showing visit info if needed
-    extra_letters = db.query(models.TaskLetter).join(models.VisitLog)\
-        .filter(models.VisitLog.visitor_nik == nik)\
-        .order_by(models.TaskLetter.uploaded_at.desc()).all()
+        for letter in letters:
+            documents.append({
+                "id": letter.id,
+                "type": "additional",
+                "filename": letter.original_filename,
+                "stored_filename": os.path.basename(letter.file_path),
+                "uploaded_at": letter.uploaded_at.isoformat() if letter.uploaded_at else None,
+                "path": letter.file_path,
+                "visit_date": str(active_visit.visit_date)
+            })
         
-    for letter in extra_letters:
-        documents.append({
-            "id": letter.id,
-            "type": "additional",
-            "filename": letter.original_filename,
-            "stored_filename": os.path.basename(letter.file_path),
-            "uploaded_at": letter.uploaded_at,
-            "path": letter.file_path,
-            "visit_date": letter.visit.visit_date
-        })
-        
-    return {"documents": documents}
+    return {"documents": documents, "visit_id": visit_id, "status": status}
 
 # 4. UPLOAD TASK LETTER (Manual)
 @app.post("/visitors/{nik}/task-letters", tags=["Admin"])
@@ -1683,52 +1695,8 @@ def upload_task_letter(
         "id": new_letter.id,
     }
 
-@app.get("/visitors/{nik}/task-letters", tags=["Visitor"])
-def get_task_letters_for_visitor(nik: str, db: Session = Depends(get_db)):
-    """Get task letters for visitor's CURRENT active visit only (prevents mixing between visits)"""
-    # Find visitor
-    visitor = db.query(models.Visitor).filter(models.Visitor.nik == nik).first()
-    if not visitor:
-        raise HTTPException(404, "Visitor tidak ditemukan")
-    
-    # Find ACTIVE visit (checked in today, not checked out yet)
-    jakarta_tz = pytz.timezone('Asia/Jakarta')
-    now_jkt = datetime.now(jakarta_tz)
-    
-    active_visit = db.query(models.VisitLog).filter(
-        models.VisitLog.visitor_nik == nik,
-        models.VisitLog.visit_date == now_jkt.date(),
-        models.VisitLog.check_out_time == None
-    ).first()
-    
-    if not active_visit:
-        # No active visit - return empty documents
-        return {"documents": [], "visit_id": None, "status": "no_active_visit"}
-    
-    # Get task letters ONLY for this specific visit
-    letters = db.query(models.TaskLetter).filter(
-        models.TaskLetter.visit_id == active_visit.id
-    ).all()
-    
-    documents = [{
-        "id": l.id,
-        "filename": l.original_filename,
-        "stored_filename": os.path.basename(l.file_path),
-        "file_size": l.file_size,
-        "uploaded_at": l.uploaded_at.isoformat() if l.uploaded_at else None,
-        "type": "additional",
-        "visit_date": str(active_visit.visit_date)
-    } for l in letters]
-    
-    return {
-        "documents": documents, 
-        "visit_id": active_visit.id,
-        "status": "active_visit"
-    }
-
-
 @app.get("/visits/{visit_id}/task-letters", tags=["Visitor"])
-def get_task_letters(visit_id: int, db: Session = Depends(get_db)):
+def get_task_letters_for_visit(visit_id: int, db: Session = Depends(get_db)):
     """Get all task letters for a visit"""
     visit = db.query(models.VisitLog).filter(models.VisitLog.id == visit_id).first()
     if not visit:
