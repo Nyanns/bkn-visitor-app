@@ -1,0 +1,59 @@
+services:
+  # Database Service (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: bkn_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bkn_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bkn_password}
+      POSTGRES_DB: ${POSTGRES_DB:-bkn_visitor}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - bkn_network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U bkn_user -d bkn_visitor" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend Service (FastAPI)
+  backend:
+    build: ./backend
+    container_name: bkn_backend
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-bkn_user}:${POSTGRES_PASSWORD:-bkn_password}@db:5432/${POSTGRES_DB:-bkn_visitor}
+      - SECRET_KEY=${SECRET_KEY:-simple_secret_key_change_in_production}
+    volumes:
+      - ./backend/uploads:/app/uploads
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - bkn_network
+    restart: always
+
+  # Frontend Service (React + Nginx)
+  frontend:
+    build: ./frontend
+    container_name: bkn_frontend
+    ports:
+      - "5173:80" # Mapping port 80 inside container to 5173 outside
+    depends_on:
+      - backend
+    networks:
+      - bkn_network
+    restart: always
+
+volumes:
+  postgres_data:
+
+
+networks:
+  bkn_network:
+    driver: bridge
