@@ -67,19 +67,38 @@
 
 ---
 
-## ⚡ Quick Start (Easy Setup)
+## ⚡ Quick Start (Docker Recommended)
 
-### Windows 🪟
+Cara termudah dan paling stabil untuk menjalankan aplikasi ini adalah menggunakan **Docker**.
+
+### 🐳 Menggunakan Docker (Paling Mudah)
 1. **Clone Repository**:
    ```bash
    git clone https://github.com/Nyanns/bkn-visitor-app.git
    cd bkn-visitor-app
    ```
-2. **Run Installer**:
-   - Double-click `setup_windows.bat`
-   - Wrapper script will install Python/Node dependencies and setup `.env` automatically.
-3. **Start App**:
-   - Double-click `start_app.bat`
+2. **Jalankan Docker**:
+   ```bash
+   docker-compose up --build -d
+   ```
+   *Tunggu hingga proses build selesai dan semua container berjalan.*
+
+3. **Akses Aplikasi**:
+   - 🏠 **Halaman Utama (Visitor)**: [http://localhost:5173](http://localhost:5173)
+   - 👨‍💼 **Halaman Admin**: [http://localhost:5173/admin/login](http://localhost:5173/admin/login)
+   - 🔌 **API Documentation**: [http://localhost:8000/api/docs](http://localhost:8000/api/docs)
+
+4. **Login Admin Default**:
+   - **Username**: `admin`
+   - **Password**: `admin123`
+
+   > **Note**: Database di Docker terisolasi. Jika Anda ingin mereset password atau membuat ulang admin di Docker, jalankan:
+   > `docker exec bkn_backend python debug_admin.py`
+
+### 🪟 Menggunakan Windows Script (Tanpa Docker)
+Jika tidak ingin menggunakan Docker:
+1. Double-click `setup_windows.bat` (Install dependencies & setup env)
+2. Double-click `start_app.bat` (Jalankan App)
 
 ---
 
@@ -472,7 +491,36 @@ Supported platforms:
 
 ---
 
-## 🐛 Troubleshooting
+## ❓ FAQ & Troubleshooting
+
+### 🆚 Bedanya Docker vs Local
+- **Environment**: Docker menggunakan lingkungan terisolasi (Linux Alpine) yang konsisten. Local menggunakan OS Windows Anda.
+- **Database**: 
+  - **Docker** menggunakan container Postgres sendiri. Data tersimpan di volume Docker.
+  - **Local** biasanya menggunakan SQLite (`database.db`) atau Postgres local.
+  - **PENTING**: Data di Docker **TIDAK** otomatis muncul di Local, begitu juga sebaliknya.
+- **Admin**: Karena database terpisah, user admin yang dibuat di Local tidak akan ada di Docker. Gunakan script `debug_admin.py` untuk membuat admin di Docker.
+
+### 🐳 Docker Troubleshooting
+**1. Lupa Password Admin Docker / Reset Admin**
+Jalankan perintah ini di terminal terpisah:
+```bash
+docker exec bkn_backend python debug_admin.py
+# Ini akan mereset user 'admin' menjadi password 'admin123'
+```
+
+**2. Error "No routes matched location /login/admin"**
+Pastikan URL yang dibuka adalah:
+- **Benar**: `http://localhost:5173/admin/login`
+- **Salah**: `/login/admin`
+
+**3. Container tidak jalan**
+Cek logs untuk diagnosa:
+```bash
+docker-compose logs -f
+```
+
+### 🐛 General Troubleshooting
 
 ### Backend Issues
 
