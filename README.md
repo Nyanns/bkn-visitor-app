@@ -77,13 +77,20 @@ Cara termudah dan paling stabil untuk menjalankan aplikasi ini adalah menggunaka
    git clone https://github.com/Nyanns/bkn-visitor-app.git
    cd bkn-visitor-app
    ```
-2. **Jalankan Docker**:
+2. **Setup Environment Variables** (PENTING untuk keamanan!):
+   ```bash
+   # Copy template dan edit dengan nilai aman
+   cp .env.docker.example .env
+   
+   # Edit file .env dan ganti password/secret key
+   # JANGAN gunakan nilai default di production!
+   ```
+3. **Jalankan Docker**:
    ```bash
    docker-compose up --build -d
    ```
-   *Tunggu hingga proses build selesai dan semua container berjalan.*
 
-3. **Akses Aplikasi**:
+4. **Akses Aplikasi**:
    - 🏠 **Halaman Utama (Visitor)**: [http://localhost:5173](http://localhost:5173)
    - 👨‍💼 **Halaman Admin**: [http://localhost:5173/admin/login](http://localhost:5173/admin/login)
    - 🔌 **API Documentation**: [http://localhost:8000/api/docs](http://localhost:8000/api/docs)
