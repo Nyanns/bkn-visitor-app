@@ -19,8 +19,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application
 COPY . .
 
-# Create uploads directory
-RUN mkdir -p uploads
+# Create uploads and task_letters directories
+RUN mkdir -p uploads task_letters logs
 
 # Expose port
 EXPOSE 8000

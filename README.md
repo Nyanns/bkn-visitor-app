@@ -607,6 +607,16 @@ pip install -r requirements.txt --force-reinstall
 
 ## 📝 Changelog
 
+### v1.6.3 (December 21, 2025) - Docker & Bug Fixes 🐳
+#### New Features
+- ✅ **Docker Improvements**: Updated Docker configuration with proper volume mounts for `task_letters` and `logs`.
+- ✅ **Nginx API Proxy**: Enabled API proxy routing in nginx for seamless Docker deployment.
+- ✅ **Environment Template**: Added `.env.docker.example` for easier Docker setup.
+
+#### Bug Fixes
+- ✅ **Task Letter Upload Fix**: Fixed duplicate endpoint issue that prevented admin from uploading task letters for checked-in visitors.
+- ✅ **Endpoint Consolidation**: Merged duplicate `/visitors/{nik}/task-letters` endpoints to properly return `visit_id`.
+
 ### v1.6.2 (December 20, 2025) - Task Letter Enhancements 📁
 #### New Features
 - ✅ **ZIP Download**: Multiple task letters can now be downloaded as a single ZIP archive from Excel export.
@@ -760,8 +770,8 @@ This project is proprietary software developed for **BKN (Badan Kepegawaian Nega
 **Repository**: [github.com/Nyanns/bkn-visitor-app](https://github.com/Nyanns/bkn-visitor-app)  
 **Status**: ✅ **Production Ready**  
 **Overall Score**: **8.8/10 (Grade A)**  
-**Last Updated**: December 20, 2025  
-**Version**: 1.6.2
+**Last Updated**: December 21, 2025  
+**Version**: 1.6.3
 
 ### Scoring Breakdown
 | Category | Score | Status |
