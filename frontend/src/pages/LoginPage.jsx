@@ -67,7 +67,7 @@ function LoginPage({ nik, setNik, handleLogin, loading }) {
             >
                 <VStack spacing={8} w="full" maxW="400px" align="start">
                     <Box>
-                        <Image src={bknLogo} h="48px" mb={6} />
+                        <Image src={bknLogo} h="48px" mb={6} alt="Logo BKN" />
                         <Heading size="xl" color="#202124" fontWeight="700">
                             Selamat Datang
                         </Heading>
