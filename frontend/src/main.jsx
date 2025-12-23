@@ -14,6 +14,36 @@ const AdminAnalytics = lazy(() => import('./pages/AdminAnalytics.jsx'))
 const AdminMasterDataPage = lazy(() => import('./pages/AdminMasterDataPage.jsx'))
 const ProtectedRoute = lazy(() => import('./components/ProtectedRoute.jsx'))
 
+// ═══════════════════════════════════════════════════════════════
+// 🎤 Hacker's Hello - Hatsune Miku Edition
+// ═══════════════════════════════════════════════════════════════
+console.log(
+  `%c
+  ╔═══════════════════════════════════════════════════════════╗
+  ║                                                           ║
+  ║   ♪ ♫ BKN VISITOR MANAGEMENT SYSTEM v1.6.4 ♫ ♪           ║
+  ║                                                           ║
+  ║   ┌─────────┐                                             ║
+  ║   │  ♪ 39  │  "The world is mine~"                       ║
+  ║   └─────────┘                                             ║
+  ║                                                           ║
+  ║   🎤 Built by: Kharisma Satria Nindhita (Sandi)          ║
+  ║   📧 Email: satrianindhita6@gmail.com                     ║
+  ║   🎵 "Code is poetry, bugs are just remix versions."      ║
+  ║                                                           ║
+  ║   ネギを持って、コードを書こう！                          ║
+  ║   (Grab your leek and let's code!)                        ║
+  ║                                                           ║
+  ╚═══════════════════════════════════════════════════════════╝
+  `,
+  'color: #39c5bb; font-weight: bold; font-size: 12px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 15px; border-radius: 8px; text-shadow: 0 0 10px #39c5bb;'
+);
+
+console.log(
+  '%c🎀 Miku says: "If you found a bug, it\'s a feature in disguise~" 🎀',
+  'color: #ff69b4; font-size: 11px; font-style: italic;'
+);
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ChakraProvider>
