@@ -607,6 +607,15 @@ pip install -r requirements.txt --force-reinstall
 
 ## 📝 Changelog
 
+### v1.6.4 (December 23, 2025) - Docker Optimization 🐳
+#### Improvements
+- ✅ **Alpine-Based Docker Images**: Migrated backend from Debian slim to Python Alpine for smaller image size and better network compatibility.
+- ✅ **Docker Health Checks**: Added comprehensive health checks for all services (db, backend, frontend) with proper dependency ordering.
+- ✅ **Admin Creation Script**: Added `create_admin.py` for easy admin user creation/reset in Docker environment.
+- ✅ **Nginx Enhancements**: Added gzip compression, security headers, and better proxy configuration for uploads/task_letters.
+- ✅ **Environment Variables**: Improved `.env.docker.example` with more configuration options and documentation.
+- ✅ **Build Optimization**: Updated frontend Dockerfile with `npm ci` for faster, more reliable builds.
+
 ### v1.6.3 (December 21, 2025) - Docker & Bug Fixes 🐳
 #### New Features
 - ✅ **Docker Improvements**: Updated Docker configuration with proper volume mounts for `task_letters` and `logs`.
@@ -770,8 +779,8 @@ This project is proprietary software developed for **BKN (Badan Kepegawaian Nega
 **Repository**: [github.com/Nyanns/bkn-visitor-app](https://github.com/Nyanns/bkn-visitor-app)  
 **Status**: ✅ **Production Ready**  
 **Overall Score**: **8.8/10 (Grade A)**  
-**Last Updated**: December 21, 2025  
-**Version**: 1.6.3
+**Last Updated**: December 23, 2025  
+**Version**: 1.6.4
 
 ### Scoring Breakdown
 | Category | Score | Status |
