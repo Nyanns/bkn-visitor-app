@@ -1,5 +1,6 @@
 # ========================================
 # BKN Visitor Management System - Docker Compose
+# Last Updated: December 2025 (v1.6.3)
 # ========================================
 # PENTING: Sebelum menjalankan docker-compose, pastikan file .env sudah ada!
 # Copy dari .env.docker.example dan isi dengan nilai yang aman.
@@ -29,15 +30,20 @@ services:
 
   # Backend Service (FastAPI)
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: bkn_backend
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-bkn_visitor}
       - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required in .env}
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/task_letters:/app/task_letters
       - ./backend/logs:/app/logs
+      - ./backend/backups:/app/backups
     ports:
       - "8000:8000"
     depends_on:
@@ -46,22 +52,39 @@ services:
     networks:
       - bkn_network
     restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
 
   # Frontend Service (React + Nginx)
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=/api
     container_name: bkn_frontend
     ports:
-      - "5173:80" # Mapping port 80 inside container to 5173 outside
+      - "5173:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - bkn_network
     restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:80/" ]
+      interval: 30s
+      timeout: 10s
+      start_period: 5s
+      retries: 3
 
 volumes:
   postgres_data:
-
+    driver: local
 
 networks:
   bkn_network:
