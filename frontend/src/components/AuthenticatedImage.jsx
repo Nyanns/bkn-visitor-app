@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Image, Spinner, Center } from '@chakra-ui/react';
 import { getAuthenticatedImageUrl, revokeBlobUrls } from '../utils/imageHelper';
 
-function AuthenticatedImage({ filename, fallbackSrc = "https://via.placeholder.com/150", ...props }) {
+function AuthenticatedImage({ filename, fallbackSrc = "https://via.placeholder.com/150", alt = "Foto pengunjung", ...props }) {
     const [imageUrl, setImageUrl] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -63,6 +63,7 @@ function AuthenticatedImage({ filename, fallbackSrc = "https://via.placeholder.c
     return (
         <Image
             src={error ? fallbackSrc : (imageUrl || fallbackSrc)}
+            alt={alt}
             {...props}
             onError={() => setError(true)}
         />
