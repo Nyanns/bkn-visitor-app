@@ -188,14 +188,16 @@ function AdminVisitorDetail() {
         }
     };
 
-    const handleDeleteLetter = async (letterId) => {
-        if (!activeVisitId) {
-            toast({ title: "Error", description: "No active visit found", status: "error" });
+    const handleDeleteLetter = async (doc) => {
+        // Use doc.visit_id for completed visits, or activeVisitId for active visits
+        const visitId = doc.visit_id || activeVisitId;
+        if (!visitId) {
+            toast({ title: "Error", description: "No visit found for this document", status: "error" });
             return;
         }
 
         try {
-            await api.deleteTaskLetter(activeVisitId, letterId);
+            await api.deleteTaskLetter(visitId, doc.id);
             toast({ title: "Dokumen dihapus", status: "success" });
             // Refresh documents
             const docsRes = await api.getTaskLetters(nik);
@@ -215,6 +217,30 @@ function AdminVisitorDetail() {
             setHistory(historyRes.data.history || []);
         } catch (error) {
             toast({ title: "Gagal check-out", description: error.response?.data?.detail, status: "error", position: "top" });
+        }
+    };
+
+    const handleDownloadFile = async (url, filename) => {
+        try {
+            // Use API client to ensure credentials/cookies are sent
+            const response = await api.get(url, { responseType: 'blob' });
+
+            // Create a blob URL and trigger download
+            const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+            // Clean up
+            window.URL.revokeObjectURL(blobUrl);
+
+            toast({ title: "Download berhasil", status: "success", duration: 2000 });
+        } catch (error) {
+            console.error("Download failed", error);
+            const errorMsg = error.response ? "File tidak ditemukan atau akses ditolak" : "Gagal menghubungi server";
+            toast({ title: "Gagal download file", description: errorMsg, status: "error" });
         }
     };
 
@@ -553,10 +579,8 @@ function AdminVisitorDetail() {
                                                         >
                                                             {visitor.ktp_path.toLowerCase().endsWith('.pdf') ? (
                                                                 <Button
-                                                                    as="a"
-                                                                    href={`/api/uploads/${visitor.ktp_path.split(/[/\\]/).pop()}`}
-                                                                    target="_blank"
                                                                     colorScheme="red" variant="outline" leftIcon={<FaFilePdf />} mt={4} mb={4}
+                                                                    onClick={() => handleDownloadFile(`/uploads/${visitor.ktp_path.split(/[/\\]/).pop()}`, `KTP-${visitor.nik}.pdf`)}
                                                                 >
                                                                     View KTP (PDF)
                                                                 </Button>
@@ -604,10 +628,28 @@ function AdminVisitorDetail() {
                                                                     key={idx} p={3} bg="gray.50" borderRadius="lg" border="1px solid" borderColor="gray.200"
                                                                     justify="space-between" align="center"
                                                                 >
-                                                                    <HStack>
+                                                                    <HStack spacing={3}>
                                                                         <Icon as={FaFilePdf} color="red.500" />
                                                                         <Box>
-                                                                            <Text fontSize="sm" fontWeight="600">{doc.filename}</Text>
+                                                                            <HStack spacing={2}>
+                                                                                <Text fontSize="sm" fontWeight="600">{doc.filename}</Text>
+                                                                                {doc.visit_status && doc.visit_status !== 'legacy' && (
+                                                                                    <Badge
+                                                                                        colorScheme={doc.visit_status === 'active' ? 'green' : 'gray'}
+                                                                                        fontSize="9px"
+                                                                                        variant="solid"
+                                                                                        px={1.5}
+                                                                                        borderRadius="full"
+                                                                                    >
+                                                                                        {doc.visit_status === 'active' ? 'ACTIVE' : 'COMPLETED'}
+                                                                                    </Badge>
+                                                                                )}
+                                                                                {doc.type === 'legacy' && (
+                                                                                    <Badge colorScheme="purple" fontSize="9px" variant="outline" px={1.5} borderRadius="full">
+                                                                                        LEGACY
+                                                                                    </Badge>
+                                                                                )}
+                                                                            </HStack>
                                                                             <Text fontSize="xs" color="gray.500">
                                                                                 {new Date(doc.uploaded_at).toLocaleDateString()}
                                                                                 {doc.type === 'additional' && doc.visit_date && ` • Visit: ${doc.visit_date}`}
@@ -616,14 +658,14 @@ function AdminVisitorDetail() {
                                                                     </HStack>
                                                                     <HStack>
                                                                         <Button
-                                                                            as="a" size="xs" colorScheme="blue" variant="ghost" leftIcon={<FaDownload />}
-                                                                            href={`/api/uploads/${doc.stored_filename}`} target="_blank"
+                                                                            size="xs" colorScheme="blue" variant="ghost" leftIcon={<FaDownload />}
+                                                                            onClick={() => handleDownloadFile(`/uploads/${doc.stored_filename}`, doc.filename)}
                                                                         >
                                                                             Download
                                                                         </Button>
                                                                         <Button
                                                                             size="xs" colorScheme="red" variant="ghost" leftIcon={<FaTrash />}
-                                                                            onClick={() => handleDeleteLetter(doc.id)}
+                                                                            onClick={() => handleDeleteLetter(doc)}
                                                                         >
                                                                             Hapus
                                                                         </Button>
