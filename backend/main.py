@@ -27,6 +27,7 @@ import puremagic
 from loguru import logger
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill
+from apscheduler.schedulers.background import BackgroundScheduler
 
 # Setup Logging
 os.makedirs("logs", exist_ok=True)
@@ -139,6 +140,31 @@ app.add_middleware(
     allow_methods=["*"], 
     allow_headers=["*"]
 )
+
+# --- 3.5 BACKGROUND SCHEDULER (Token Cleanup) ---
+scheduler = BackgroundScheduler()
+
+def scheduled_token_cleanup():
+    """Periodic cleanup of expired download tokens (runs every 6 hours)"""
+    db = next(get_db())
+    try:
+        cleanup_expired_tokens(db)
+        logger.info("Scheduled token cleanup completed")
+    except Exception as e:
+        logger.error(f"Scheduled token cleanup failed: {e}")
+    finally:
+        db.close()
+
+# Schedule cleanup every 6 hours
+scheduler.add_job(
+    func=scheduled_token_cleanup,
+    trigger="interval",
+    hours=6,
+    id="token_cleanup",
+    replace_existing=True
+)
+scheduler.start()
+logger.info("Background scheduler started (token cleanup every 6 hours)")
 
 # --- 4. SCHEMAS ---
 class StandardResponse(BaseModel):
@@ -264,12 +290,108 @@ def validate_and_save_file(upload_file: UploadFile) -> str:
     return file_path
 
 
+# --- DOWNLOAD TOKEN HELPERS ---
+def generate_download_token(db: Session, file_path: str, hours_valid: int = 24) -> str:
+    """
+    Generate a temporary download token for a file.
+    Used for Excel export links that need to work without authentication.
+    """
+    # Lazy cleanup: Remove expired tokens occasionally when generating new ones
+    # (Checking every time is fine for low volume, or could be randomized)
+    cleanup_expired_tokens(db)
+    
+    token = str(uuid.uuid4())
+    expires_at = datetime.now() + timedelta(hours=hours_valid)
+    
+    new_token = models.DownloadToken(
+        token=token,
+        file_path=file_path,
+        expires_at=expires_at
+    )
+    db.add(new_token)
+    # Don't commit here - let the caller handle transaction
+    return token
+
+def cleanup_expired_tokens(db: Session):
+    """Remove expired download tokens to prevent table bloat."""
+    try:
+        expired_count = db.query(models.DownloadToken).filter(
+            models.DownloadToken.expires_at < datetime.now()
+        ).delete()
+        db.commit()
+        if expired_count > 0:
+            logger.info(f"Cleaned up {expired_count} expired download tokens")
+    except Exception as e:
+        logger.error(f"Error cleaning up tokens: {e}")
+        db.rollback()
+
+
 # --- 7. API ENDPOINTS ---
 
 @app.get("/", tags=["System"])
 def read_root():
     """Root endpoint - API Status"""
     return {"status": "online", "system": "BKN Visitor App v1.0.0", "docs": "/api/docs"}
+
+# === PUBLIC DOWNLOAD (Token-based for Excel exports) ===
+@app.get("/public-download/{token}", tags=["Public"])
+def public_download(token: str, db: Session = Depends(get_db)):
+    """
+    Public endpoint to download files using temporary token.
+    Used by Excel export hyperlinks which don't have authentication.
+    Tokens expire after 24 hours.
+    """
+    # Security: Basic token validation
+    if not token or len(token) < 30:
+        raise HTTPException(status_code=400, detail="Invalid token format")
+    
+    # Find token in database
+    download_token = db.query(models.DownloadToken).filter(
+        models.DownloadToken.token == token
+    ).first()
+    
+    if not download_token:
+        raise HTTPException(status_code=404, detail="Link download tidak valid atau sudah kadaluarsa")
+    
+    # Check expiration
+    if datetime.now() > download_token.expires_at:
+        # Clean up expired token
+        db.delete(download_token)
+        db.commit()
+        raise HTTPException(status_code=410, detail="Link download sudah kadaluarsa (expired)")
+    
+    # Check if file exists
+    if not os.path.exists(download_token.file_path):
+        logger.warning(f"Token {token[:8]}... points to missing file: {download_token.file_path}")
+        raise HTTPException(status_code=404, detail="File tidak ditemukan")
+    
+    # Increment usage counter
+    download_token.used_count += 1
+    db.commit()
+    
+    # Determine media type and filename
+    filename = os.path.basename(download_token.file_path)
+    file_ext = filename.lower().split('.')[-1] if '.' in filename else ''
+    
+    media_type = "application/octet-stream"
+    if file_ext in ['jpg', 'jpeg']:
+        media_type = "image/jpeg"
+    elif file_ext == 'png':
+        media_type = "image/png"
+    elif file_ext == 'pdf':
+        media_type = "application/pdf"
+    
+    logger.info(f"Public download: {filename} via token {token[:8]}...")
+    
+    return FileResponse(
+        download_token.file_path,
+        media_type=media_type,
+        filename=filename,
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "X-Content-Type-Options": "nosniff"
+        }
+    )
 
 # === MONITORING ENDPOINTS ===
 @app.get("/health", tags=["Monitoring"])
@@ -361,25 +483,27 @@ def logout(response: Response):
     return {"status": "success", "message": "Logout berhasil"}
 
 # === SETUP ADMIN ===
-@app.post("/setup-admin")
-def create_initial_admin(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
-    if os.getenv("ALLOW_SETUP_ADMIN") != "true":
-        logger.warning("Attempt to access /setup-admin with feature disabled")
-        raise HTTPException(status_code=403, detail="Fitur setup admin dinonaktifkan.")
+# Conditionally register endpoint only if ALLOW_SETUP_ADMIN=true
+if os.getenv("ALLOW_SETUP_ADMIN", "false").lower() == "true":
+    @app.post("/setup-admin")
+    def create_initial_admin(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+        # Endpoint only registered when enabled, no need for internal check
+        if db.query(models.Admin).first():
+            raise HTTPException(status_code=400, detail="Admin sudah ada. Gunakan login.")
 
-    if db.query(models.Admin).first():
-        raise HTTPException(status_code=400, detail="Admin sudah ada. Gunakan login.")
-
-    try:
-        hashed_password = get_password_hash(password)
-        new_admin = models.Admin(username=username, password_hash=hashed_password)
-        db.add(new_admin)
-        db.commit()
-        logger.info(f"New admin created: {username}")
-        return {"status": "success", "message": f"Admin {username} berhasil dibuat"}
-    except Exception as e:
-        logger.error(f"Error creating admin: {e}")
-        raise HTTPException(status_code=500, detail="Terjadi kesalahan server. Silakan coba lagi.")
+        try:
+            hashed_password = get_password_hash(password)
+            new_admin = models.Admin(username=username, password_hash=hashed_password)
+            db.add(new_admin)
+            db.commit()
+            logger.info(f"New admin created: {username}")
+            return {"status": "success", "message": f"Admin {username} berhasil dibuat"}
+        except Exception as e:
+            logger.error(f"Error creating admin: {e}")
+            raise HTTPException(status_code=500, detail="Terjadi kesalahan server. Silakan coba lagi.")
+    logger.info("Setup-admin endpoint registered (ALLOW_SETUP_ADMIN=true)")
+else:
+    logger.info("Setup-admin endpoint disabled (ALLOW_SETUP_ADMIN=false)")
 
 # === HELPER: CLEANUP EXCEL FILES ===
 def cleanup_excel_file(filepath: str):
@@ -398,6 +522,7 @@ def cleanup_excel_file(filepath: str):
 
 # === EXPORT TO EXCEL ===
 @app.get("/admin/export-excel", tags=["Admin"])
+@limiter.limit("3/minute")
 def export_to_excel(request: Request, background_tasks: BackgroundTasks, current_admin: models.Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     try:
         # Determine Base URL for Hyperlinks
@@ -469,14 +594,14 @@ def export_to_excel(request: Request, background_tasks: BackgroundTasks, current
                 
             ws.cell(row=idx, column=11, value="Sedang Berkunjung" if not log.check_out_time else "Selesai")
 
-            # === Document Statuses with HYPERLINKS ===
+            # === Document Statuses with HYPERLINKS (Token-based for public access) ===
             
             # 1. FOTO
             cell_foto = ws.cell(row=idx, column=12)
             if visitor.photo_path and os.path.exists(visitor.photo_path):
-                filename = os.path.basename(visitor.photo_path)
-                file_url = f"{base_url}/uploads/{filename}"
-                cell_foto.value = "Lihat Foto"
+                token = generate_download_token(db, visitor.photo_path)
+                file_url = f"{base_url}/public-download/{token}"
+                cell_foto.value = "Download Foto"
                 cell_foto.hyperlink = file_url
                 cell_foto.font = link_font
             else:
@@ -485,9 +610,9 @@ def export_to_excel(request: Request, background_tasks: BackgroundTasks, current
             # 2. KTP
             cell_ktp = ws.cell(row=idx, column=13)
             if visitor.ktp_path and os.path.exists(visitor.ktp_path):
-                filename = os.path.basename(visitor.ktp_path)
-                file_url = f"{base_url}/uploads/{filename}"
-                cell_ktp.value = "Lihat KTP"
+                token = generate_download_token(db, visitor.ktp_path)
+                file_url = f"{base_url}/public-download/{token}"
+                cell_ktp.value = "Download KTP"
                 cell_ktp.hyperlink = file_url
                 cell_ktp.font = link_font
             else:
@@ -497,33 +622,36 @@ def export_to_excel(request: Request, background_tasks: BackgroundTasks, current
             cell_letter = ws.cell(row=idx, column=14)
             
             # Check for modern task letters first
-            # (In a real scenario, could link to a zip or list multiple, for now linking first or legacy)
-            letter_count = db.query(models.TaskLetter).filter(models.TaskLetter.visit_id == log.id).count()
+            task_letters = db.query(models.TaskLetter).filter(models.TaskLetter.visit_id == log.id).all()
+            letter_count = len(task_letters)
             
             if letter_count > 0:
-                if letter_count > 1:
-                    # Link to ZIP download
-                    file_url = f"{base_url}/visits/{log.id}/task-letters/archive"
-                    cell_letter.value = f"Download {letter_count} Files (ZIP)"
+                if letter_count == 1:
+                    # Single file - direct token link
+                    token = generate_download_token(db, task_letters[0].file_path)
+                    file_url = f"{base_url}/public-download/{token}"
+                    cell_letter.value = "Download Surat"
                 else:
-                    # Link to the single file
-                    first_letter = db.query(models.TaskLetter).filter(models.TaskLetter.visit_id == log.id).first()
-                    clean_filename = os.path.basename(first_letter.file_path)
-                    file_url = f"{base_url}/uploads/{clean_filename}"
-                    cell_letter.value = f"1 File (Lihat)"
+                    # Multiple files - link to first, note count
+                    token = generate_download_token(db, task_letters[0].file_path)
+                    file_url = f"{base_url}/public-download/{token}"
+                    cell_letter.value = f"{letter_count} File (klik utk #1)"
                 
                 cell_letter.hyperlink = file_url
                 cell_letter.font = link_font
                 
             elif visitor.task_letter_path and os.path.exists(visitor.task_letter_path):
                 # Legacy
-                filename = os.path.basename(visitor.task_letter_path)
-                file_url = f"{base_url}/uploads/{filename}"
-                cell_letter.value = "Lihat (Legacy)"
+                token = generate_download_token(db, visitor.task_letter_path)
+                file_url = f"{base_url}/public-download/{token}"
+                cell_letter.value = "Download (Legacy)"
                 cell_letter.hyperlink = file_url
                 cell_letter.font = link_font
             else:
                 cell_letter.value = "-"
+        
+        # Commit all tokens at once
+        db.commit()
         
         # Adjust column widths
         ws.column_dimensions['A'].width = 5
@@ -563,7 +691,8 @@ def export_to_excel(request: Request, background_tasks: BackgroundTasks, current
 
 # === EXPORT MASTER DATA ===
 @app.get("/admin/export-master-data", tags=["Admin"])
-def export_master_data(background_tasks: BackgroundTasks, current_admin: models.Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+def export_master_data(request: Request, background_tasks: BackgroundTasks, current_admin: models.Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
     try:
         # Create workbook
         wb = Workbook()
@@ -778,7 +907,9 @@ def get_visitor_photo(nik: str, db: Session = Depends(get_db)):
 
 
 @app.post("/check-in/", tags=["Attendance"])
+@limiter.limit("10/minute")
 def check_in(
+    request: Request,
     nik: str = Form(...),
     visit_purpose: str = Form(None),  # NEW: Tujuan berkunjung (optional at check-in, can be added later)
     room_id: int = Form(None),  # NEW: Room ID
@@ -837,7 +968,8 @@ def check_in(
     }
 
 @app.post("/check-out/", tags=["Attendance"])
-def check_out(nik: str = Form(...), db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def check_out(request: Request, nik: str = Form(...), db: Session = Depends(get_db)):
     # Get current time in Jakarta timezone
     now_jkt = datetime.now(JAKARTA_TZ)
     
@@ -921,9 +1053,26 @@ def get_uploaded_file(filename: str, current_admin: models.Admin = Depends(get_c
         logger.warning(f"Directory traversal attempt blocked: {filename}")
         raise HTTPException(status_code=400, detail="Invalid filename")
     
-    # Check if file exists
+    logger.info(f"[SMART LOOKUP DEBUG] Requested file: {filename}")
+    logger.info(f"[SMART LOOKUP DEBUG] Primary path: {file_path}")
+    logger.info(f"[SMART LOOKUP DEBUG] Primary path exists: {os.path.exists(file_path)}")
+    
+    # Check if file exists in primary uploads folder
     if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="File not found")
+        # Fallback: Check in task_letters subdirectory (Smart Lookup)
+        # Some files like task letters might be stored in specific subfolders 
+        # but accessed via the generic /uploads/ endpoint
+        alternative_path = os.path.join(TASK_LETTER_DIR, filename)
+        logger.info(f"[SMART LOOKUP DEBUG] Alternative path: {alternative_path}")
+        logger.info(f"[SMART LOOKUP DEBUG] Alternative path exists: {os.path.exists(alternative_path)}")
+        
+        if os.path.exists(alternative_path):
+            file_path = alternative_path
+            logger.info(f"[SMART LOOKUP DEBUG] Using alternative path!")
+        else:
+            # Not found in either location
+            logger.warning(f"File not found: {filename} (Checked {file_path} and {alternative_path})")
+            raise HTTPException(status_code=404, detail="File not found")
     
     # Security: Force download to prevent XSS (especially for PDFs/SVGs)
     # Use inline for images to display in browser
@@ -1102,13 +1251,12 @@ def update_visitor_ktp(
 # 3. GET TASK LETTERS (returns active visit id for upload support)
 @app.get("/visitors/{nik}/task-letters", tags=["Admin"])
 def get_task_letters(nik: str, db: Session = Depends(get_db)):
-    """Get task letters for visitor and return active visit_id if available for upload"""
+    """Get ALL task letters for visitor from ALL visits, return active visit_id for upload"""
     visitor = db.query(models.Visitor).filter(models.Visitor.nik == nik).first()
     if not visitor:
         raise HTTPException(status_code=404, detail="Visitor not found")
     
-    # Find ACTIVE visit (any visit that hasn't checked out yet, regardless of date)
-    # This allows admin to add task letters even if visitor checked in yesterday but forgot to checkout
+    # Find ACTIVE visit (for upload support)
     active_visit = db.query(models.VisitLog).filter(
         models.VisitLog.visitor_nik == nik,
         models.VisitLog.check_out_time == None
@@ -1128,13 +1276,19 @@ def get_task_letters(nik: str, db: Session = Depends(get_db)):
             "filename": os.path.basename(visitor.task_letter_path),
             "stored_filename": os.path.basename(visitor.task_letter_path),
             "uploaded_at": visitor.created_at,
-            "path": visitor.task_letter_path
+            "path": visitor.task_letter_path,
+            "visit_id": None,
+            "visit_status": "legacy"
         })
     
-    # B. Get Task Letters for current active visit only (if any)
-    if active_visit:
+    # B. Get Task Letters from ALL visits (not just active) - FIX for bug where docs disappear after checkout
+    all_visits = db.query(models.VisitLog).filter(
+        models.VisitLog.visitor_nik == nik
+    ).order_by(models.VisitLog.check_in_time.desc()).all()
+    
+    for visit in all_visits:
         letters = db.query(models.TaskLetter).filter(
-            models.TaskLetter.visit_id == active_visit.id
+            models.TaskLetter.visit_id == visit.id
         ).order_by(models.TaskLetter.uploaded_at.desc()).all()
         
         for letter in letters:
@@ -1145,14 +1299,18 @@ def get_task_letters(nik: str, db: Session = Depends(get_db)):
                 "stored_filename": os.path.basename(letter.file_path),
                 "uploaded_at": letter.uploaded_at.isoformat() if letter.uploaded_at else None,
                 "path": letter.file_path,
-                "visit_date": str(active_visit.visit_date)
+                "visit_id": visit.id,
+                "visit_date": str(visit.visit_date),
+                "visit_status": "active" if visit.check_out_time is None else "completed"
             })
         
     return {"documents": documents, "visit_id": visit_id, "status": status}
 
 # 4. UPLOAD TASK LETTER (Manual)
 @app.post("/visitors/{nik}/task-letters", tags=["Admin"])
+@limiter.limit("5/minute")
 def upload_task_letter(
+    request: Request,
     nik: str,
     file: UploadFile = File(...),
     current_admin: models.Admin = Depends(get_current_admin),
@@ -1659,7 +1817,9 @@ def validate_pdf_file(upload_file: UploadFile) -> str:
     return file_path, file_size
 
 @app.post("/visits/{visit_id}/task-letters", status_code=status.HTTP_201_CREATED, tags=["Visitor"])
-def upload_task_letter(
+@limiter.limit("5/minute")
+def add_task_letter(
+    request: Request,
     visit_id: int,
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
@@ -1827,22 +1987,4 @@ def get_active_visit(nik: str, db: Session = Depends(get_db)):
             "can_add_more_letters": task_letters_count < MAX_TASK_LETTERS_PER_VISIT
         }
     }
-
-# === FILE SERVING ENDPOINT ===
-@app.get("/uploads/{filename}", tags=["System"])
-def get_uploaded_file(filename: str):
-    """
-    Serve uploaded files (photos, PDFs, etc).
-    """
-    # 1. Search in main UPLOAD_DIR
-    file_path = os.path.join(UPLOAD_DIR, filename)
-    if os.path.exists(file_path):
-        return FileResponse(file_path)
-    
-    # 2. Search in TASK_LETTER_DIR
-    task_letter_path = os.path.join(TASK_LETTER_DIR, filename)
-    if os.path.exists(task_letter_path):
-        return FileResponse(task_letter_path)
-    
-    raise HTTPException(status_code=404, detail="File not found")
 

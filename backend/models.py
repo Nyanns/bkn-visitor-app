@@ -87,3 +87,14 @@ class Admin(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     password_hash = Column(String)
+
+# Tabel 7: Download Token (for Excel export public links)
+class DownloadToken(Base):
+    __tablename__ = "download_tokens"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, unique=True, index=True, nullable=False)
+    file_path = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.now)
+    expires_at = Column(DateTime, nullable=False)
+    used_count = Column(Integer, default=0)  # Track usage for analytics
