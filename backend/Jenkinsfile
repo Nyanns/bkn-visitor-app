@@ -1,0 +1,127 @@
+pipeline {
+    parameters {
+        string(name: 'PRODUCTION_NAMESPACE',       description: 'Production Namespace',                 defaultValue: 'inti-apps')
+
+        string(name: 'DEVELOPMENT_NAMESPACE',      description: 'Development Namespace',                defaultValue: 'inti-apps-dev')
+
+        string(name: 'DOCKER_IMAGE_NAME',          description: 'Docker Image Name',                    defaultValue: 'be-dc-logbook')
+    }
+	
+    agent {label 'master'}
+       triggers {
+           pollSCM(env.BRANCH_NAME == 'main' ? '* * * * *' : '* * * * *')
+    }
+
+    
+    
+    stages {
+
+        stage('Checkout SCM') {
+            steps {
+                
+                script{
+                 while(currentBuild.rawBuild.getPreviousBuildInProgress() != null) {
+                         currentBuild.rawBuild.getPreviousBuildInProgress().doKill()
+                    }
+
+                    sh 'rm -Rf *'
+                }
+                checkout scm
+                script {
+                    echo "get COMMIT_ID"
+                    sh 'echo -n $(git rev-parse --short HEAD) > ./commit-id'
+                    commitId = readFile('./commit-id')
+                }
+                stash(name: 'ws', includes:'**,./commit-id') // stash this current 
+            }
+        }
+
+        stage('Initialize') {
+            steps {
+                script{
+                            if ( env.BRANCH_NAME == 'main' ){
+				    projectKubernetes= "${params.PRODUCTION_NAMESPACE}"
+                                envStage = "production"
+                            //    env = "prod"
+                             //   rename = "cp config/config.json.bkn config/config.json"
+                                
+                            }else if ( env.BRANCH_NAME == 'development'){
+				projectKubernetes= "${params.DEVELOPMENT_NAMESPACE}"
+                                envStage = "development"
+                            //    env = "training"
+                            //  rename = "cp config/config.json.train config/config.json"
+                    }
+                    echo "${projectKubernetes}"
+                    
+                } 
+                
+            }
+        }
+
+
+
+        stage('Build Docker') {
+            steps {
+                script{
+                    dir('backend') {
+                         sh "docker build --rm --no-cache --pull -t ${params.DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-${commitId} ."
+                    }
+                }
+            }
+        }
+
+       stage('Deploy') {
+            steps {
+		    script{
+                	   echo "Login Docker Registry"
+  			
+    			withCredentials([usernamePassword(credentialsId: 'registry', usernameVariable: 'username', passwordVariable: 'password')]) {
+                        
+        			sh "docker login harbor.bkn.go.id -u admin -p ${password}"
+
+                 imagefinal = "harbor.bkn.go.id/${projectKubernetes}/${params.DOCKER_IMAGE_NAME}"
+				 sh "docker tag ${params.DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-${commitId} ${imagefinal}:latest"
+				 sh  "docker push  ${imagefinal}:latest"
+                 sh "docker tag ${params.DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-${commitId} ${imagefinal}:prod-${BUILD_NUMBER}"
+				 sh  "docker push ${imagefinal}:prod-${BUILD_NUMBER}"
+                //deploy project 
+                // 🔐 Login ke rancher pakai token
+
+                withCredentials([string(credentialsId: 'rancher-cluster-pusat', variable: 'ACCESS_TOKEN')]) {
+                    def K8S_API = "https://10.100.11.216:6443"
+                   
+                if (env.BRANCH_NAME == 'main'){
+                sh "kubectl --token=$ACCESS_TOKEN --server=${K8S_API} --insecure-skip-tls-verify=true -n dc-logbook set image deployment/${params.DOCKER_IMAGE_NAME} ${params.DOCKER_IMAGE_NAME}=${imagefinal}:prod-${BUILD_NUMBER}"
+
+                }else if (env.BRANCH_NAME == 'development'){
+                sh "kubectl --token=$ACCESS_TOKEN --server=${K8S_API} --insecure-skip-tls-verify=true -n dc-logbook-dev set image deployment/${params.DOCKER_IMAGE_NAME} ${params.DOCKER_IMAGE_NAME}=${imagefinal}:prod-${BUILD_NUMBER}"
+
+                }
+                }
+
+
+                 sh "docker rmi ${params.DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-${commitId}"
+                 sh "docker rmi ${imagefinal}:prod-${BUILD_NUMBER}"
+         
+    			}
+
+    			
+		    }
+		    
+            }
+        }
+
+
+    }
+
+
+
+post {
+        always{
+          
+          	 sh  "docker rmi -f  ${imagefinal}:latest"
+          
+        }
+	
+       }
+}
