@@ -183,7 +183,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-> 📝 **Note**: Local development uses SQLite by default (no PostgreSQL required).
+> 📝 **Note**: Configure `DATABASE_URL` in `backend/.env` to use PostgreSQL or SQLite.
 
 #### Step 3: Setup Frontend (New Terminal)
 
