@@ -1,6 +1,6 @@
 # ========================================
 # BKN Visitor Management System - Backend
-# Last Updated: December 2025
+# Last Updated: January 14, 2026 (v2.0.0)
 # ========================================
 
 # Use Alpine-based Python image for smaller size and better compatibility
