@@ -1,6 +1,6 @@
 # ========================================
 # BKN Visitor Management System - Docker Compose
-# Last Updated: December 2025 (v1.6.3)
+# Last Updated: January 14, 2026 (v2.0.0)
 # ========================================
 # PENTING: Sebelum menjalankan docker-compose, pastikan file .env sudah ada!
 # Copy dari .env.docker.example dan isi dengan nilai yang aman.

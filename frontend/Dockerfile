@@ -1,6 +1,6 @@
 # ========================================
 # BKN Visitor Management System - Frontend
-# Last Updated: December 2025
+# Last Updated: January 14, 2026 (v2.0.0)
 # ========================================
 
 # Build Stage - Use standard node image (not alpine) for better compatibility

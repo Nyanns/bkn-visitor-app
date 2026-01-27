@@ -1,7 +1,7 @@
 # 📘 Technical Documentation
 **Project**: BKN Visitor Management System  
-**Generated Date**: December 23, 2025  
-**Version**: 1.6.4
+**Generated Date**: January 27, 2026  
+**Version**: 2.0.0
 
 ---
 
