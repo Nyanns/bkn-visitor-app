@@ -64,7 +64,15 @@ pipeline {
             steps {
                 
                 script{
-                    sh "docker build --rm --no-cache --pull -t ${params.DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-${commitId} ."
+                    // Set API URL based on environment
+                    def apiUrl = ""
+                    if (env.BRANCH_NAME == 'main') {
+                        apiUrl = "https://api-logbook.bkn.go.id"
+                    } else if (env.BRANCH_NAME == 'development') {
+                        apiUrl = "https://dev-api-logbook.bkn.go.id"
+                    }
+                    
+                    sh "docker build --rm --no-cache --pull --build-arg VITE_API_URL=${apiUrl} -t ${params.DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-${commitId} ."
                 }
             }
         }

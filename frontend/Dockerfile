@@ -17,8 +17,8 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build argument for API URL (can be overridden at build time)
-ARG VITE_API_URL=/api
+# Build argument for API URL (MUST be passed at build time from Jenkins)
+ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
 # Build the project
