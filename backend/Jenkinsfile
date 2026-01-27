@@ -63,9 +63,7 @@ pipeline {
         stage('Build Docker') {
             steps {
                 script{
-                    dir('backend') {
-                         sh "docker build --rm --no-cache --pull -t ${params.DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-${commitId} ."
-                    }
+                     sh "docker build --rm --no-cache --pull -t ${params.DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-${commitId} ."
                 }
             }
         }

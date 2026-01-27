@@ -64,9 +64,7 @@ pipeline {
             steps {
                 
                 script{
-                    dir('frontend') {
-                        sh "docker build --rm --no-cache --pull -t ${params.DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-${commitId} ."
-                    }
+                    sh "docker build --rm --no-cache --pull -t ${params.DOCKER_IMAGE_NAME}:${BUILD_NUMBER}-${commitId} ."
                 }
             }
         }
