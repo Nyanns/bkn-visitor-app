@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: be-dc-logbook
+  namespace: dc-logbook
+  labels:
+    app: be-dc-logbook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: be-dc-logbook
+  template:
+    metadata:
+      labels:
+        app: be-dc-logbook
+    spec:
+      imagePullSecrets:
+      - name: registry
+      containers:
+      - name: be-dc-logbook
+        image: harbor.bkn.go.id/inti-apps/be-dc-logbook:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: be-dc-logbook
+  namespace: dc-logbook
+spec:
+  selector:
+    app: be-dc-logbook
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+  type: ClusterIP
