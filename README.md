@@ -27,6 +27,7 @@
 - ✅ **Advanced Search & Filter** - Search by name, NIK, or institution
 - ✅ **Excel Export** - Professional formatted reports with Jakarta timezone
 - ✅ **Visitor Registration** - Secure admin-only registration system
+- ✅ **Visitor Data Management** - Edit and Delete visitor data (CRUD)
 - ✅ **Session Management** - Auto-logout after 30 minutes idle (security)
 - ✅ **API Documentation** - Interactive Swagger UI & ReDoc
 
